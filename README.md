@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Expedisi Project
 
-## Getting Started
+This project is a Next.js application with a PostgreSQL database managed by Prisma. It's set up for Dockerized development, but can also be run locally without Docker.
 
-First, run the development server:
+## Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+
+- [Node.js](https://nodejs.org/) (LTS version recommended)
+- [npm](https://www.npmjs.com/) (comes with Node.js)
+- [Docker](https://www.docker.com/get-started/) and [Docker Compose](https://docs.docker.com/compose/install/) (Required for Docker setup)
+
+## Setup Instructions
+
+Follow these steps to set up the project on your local machine:
+
+### 1. Clone the Repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/gafnaa/ekspedisi.git
+cd ekspedisi
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Install the project's Node.js dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+```
 
-## Learn More
+### 3. Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Create a `.env` file in the root of the project by copying the `.env.example` file:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cp .env.example .env
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Then, edit the `.env` file and replace the placeholder values with your actual PostgreSQL database credentials:
 
-## Deploy on Vercel
+```
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For example:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+DATABASE_URL="postgresql://postgres:admin@localhost:5432/buku_ekspedisi"
+```
+
+### 4. Prisma Setup
+
+The project uses Prisma for database management.
+
+- **Apply Migrations:** Run the following command to apply the existing database migrations and set up the database schema:
+
+  ```bash
+  npx prisma migrate dev --name init
+  ```
+
+  (Note: If you encounter issues, you might need to reset the database with `npx prisma migrate reset` and then run the migration command again.)
+
+- **Prisma Studio:** You can use Prisma Studio to view and manage your database data. It's already configured to run via Docker Compose.
+
+### 5. Running the Application
+
+You have two options for running the application locally:
+
+#### Option A: Using Docker Compose (Recommended for consistency)
+
+Start the application and the PostgreSQL database using Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
+This command will build the Docker image for the application and start the services. The application will be accessible at `http://localhost:3000`.
+
+#### Option B: Running Locally Without Docker
+
+If you prefer not to use Docker, you can run the application directly using npm:
+
+1.  Ensure you have Node.js and npm installed.
+2.  Complete steps 1-4 above (Clone, Install Dependencies, Environment Variables, Prisma Setup).
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
+    The application will be accessible at `http://localhost:3000`.
+
+## Project Structure
+
+- `app/`: Contains the Next.js application pages and components.
+- `prisma/`: Contains Prisma schema and migration files.
+- `public/`: Static assets.
+- `Dockerfile`: Instructions for building the Docker image for the application.
+- `docker-compose.yml`: Defines the Docker services for the application and database.
