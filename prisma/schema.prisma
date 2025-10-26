@@ -1,19 +1,103 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// schema.prisma
+// Provider can be changed to "mysql" if you prefer.
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-provider = "postgresql" // Or "postgresql", "mysql", "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+/// Role-based access (Admin has full CRUD including delete; Staf cannot hard-delete)
+enum Role {
+  ADMIN
+  STAF
+}
+
+/// What entity an activity log entry refers to
+enum EntityType {
+  USER
+  SURAT_KELUAR
+}
+
+/// Simple action taxonomy for auditing
+enum Action {
+  LOGIN
+  CREATE
+  READ
+  UPDATE
+  DELETE          // record when a soft delete is performed
+  EXPORT
+}
+
+/// Users (Pengguna) — stores login identity, profile, role, optional digital signature
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String        @id @default(uuid())
+  username      String        @unique
+  namaLengkap   String
+  role          Role          @default(STAF)
+  /// Store a signature image as raw bytes (bytea in Postgres). If you prefer URL storage, change to String.
+  tandaTangan   Bytes?        
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  suratDibuat   SuratKeluar[] @relation("SuratDibuatOleh")
+  suratDihapus  SuratKeluar[] @relation("SuratDihapusOleh")
+  logs          ActivityLog[]
+
+  @@index([role])
+  @@index([username])
+}
+
+/// Surat Keluar (Buku Ekspedisi)
+/// Notes:
+/// - nomorUrut is auto-incremented for traceability (global sequence).
+/// - nomorSurat is globally unique to prevent duplicate input.
+/// - Soft delete via deletedAt + deletedBy.
+model SuratKeluar {
+  id             String     @id @default(uuid())
+  nomorUrut      Int        @default(autoincrement()) @unique
+  tanggalKirim   DateTime
+  nomorSurat     String     @unique
+  tanggalSurat   DateTime
+  perihal        String
+  tujuan         String
+  keterangan     String?
+
+  // Audit: who created the entry
+  userId         String
+  createdBy      User       @relation("SuratDibuatOleh", fields: [userId], references: [id], onUpdate: Cascade)
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // Soft delete (SRS asks to keep an audit trail)
+  deletedAt      DateTime?
+  deletedById    String?
+  deletedBy      User?      @relation("SuratDihapusOleh", fields: [deletedById], references: [id], onUpdate: Cascade)
+
+  // Useful indexes for search/filter (nomor/tanggal/tujuan)
+  @@index([tanggalKirim])
+  @@index([tanggalSurat])
+  @@index([tujuan])
+  @@index([perihal])
+}
+
+/// Activity log for accountability and audit trail
+/// Store structured details in metadata (e.g., before/after diffs, export filters, client IP)
+model ActivityLog {
+  id         String     @id @default(uuid())
+  occurredAt DateTime   @default(now())
+  action     Action
+  entityType EntityType
+  entityId   String
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onUpdate: Cascade)
+  metadata   Json?
+
+  @@index([occurredAt])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([userId, occurredAt])
 }
