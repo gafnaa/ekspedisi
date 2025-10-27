@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // <-- PERBAIKAN: Impor useRouter
 import {
   ArrowLeft,
-  Home,
-  ChevronRight,
   CalendarDays,
-  Upload,
+  ChevronRight,
+  Home,
   Save,
+  Upload,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // <-- PERBAIKAN: Impor useRouter
+import { useEffect, useState } from 'react';
 
 // Tentukan tipe data untuk form
 interface FormData {
@@ -101,21 +101,37 @@ export default function BukuEkspedisiForm({
 
   // Handler saat form disubmit
   // <-- PERBAIKAN: Menambahkan router.push()
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Di sini logika untuk mengirim data (formData) ke API
-    if (isEditMode) {
-      console.log('Mengupdate data:', formData);
-      // Panggil API UPDATE (PUT/PATCH) di sini
-    } else {
-      console.log('Menyimpan data baru:', formData);
-      // Panggil API CREATE (POST) di sini
+
+    const payload = {
+      nomorUrut: Number(formData.nomorUrut) || undefined,
+      nomorSurat: formData.nomorSurat,
+      tanggalSurat: formData.tanggalSurat,
+      tanggalKirim: formData.tanggalPengiriman,
+      perihal: formData.isiSingkat,
+      tujuan: formData.tujuan,
+      keterangan: formData.keterangan || null,
+      userId: "3fbf1d65-6321-4b94-b122-87a9ac2c34ef", // TODO: nanti pakai auth beneran
+    };
+
+    const res = await fetch("/api/surat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await res.json();
+
+    if (!json.ok) {
+      alert("Gagal menyimpan: " + json.error);
+      return;
     }
-    
-    // Setelah submit, tampilkan alert dan navigasi kembali ke halaman daftar
-    alert(isEditMode ? 'Data berhasil diubah!' : 'Data berhasil disimpan!');
-    router.push('/buku-ekspedisi');
+
+    alert("Data berhasil disimpan!");
+    router.push("/buku-ekspedisi");
   };
+
 
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen">
