@@ -1,39 +1,19 @@
 // app/buku-ekspedisi/page.tsx
-import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
 import TableClient from '@/app/buku-ekspedisi/table-client';
-import { Plus, Printer, Download, Search, ArrowUpDown } from 'lucide-react';
+import { Download, Plus, Printer, Search } from 'lucide-react';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic'; // or use revalidate if you prefer ISR
 
 async function getData() {
-  // Only non-deleted rows
-  const rows = await prisma.suratKeluar.findMany({
-    where: { deletedAt: null },
-    orderBy: { nomorUrut: 'asc' },
-    select: {
-      id: true,
-      nomorUrut: true,
-      tanggalKirim: true,
-      nomorSurat: true,
-      tanggalSurat: true,
-      perihal: true,
-      tujuan: true,
-      keterangan: true,
-    },
+  const res = await fetch("http://localhost:3000/api/surat", {
+    cache: "no-store"
   });
 
-  return rows.map((r: any) => ({
-    id: r.id,
-    no: r.nomorUrut,
-    tglPengiriman: r.tanggalKirim ? r.tanggalKirim.toISOString() : null,
-    noSurat: r.nomorSurat,
-    tglSurat: r.tanggalSurat.toISOString(),
-    isiSingkat: r.perihal,
-    ditujukan: r.tujuan,
-    keterangan: r.keterangan ?? '-',
-  }));
+  const json = await res.json();
+  return json.data;
 }
+
 
 export default async function BukuEkspedisiPage() {
   const dataEkspedisi = await getData();

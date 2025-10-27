@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // <-- PERBAIKAN: Impor useRouter
 import {
   ArrowLeft,
-  Home,
-  ChevronRight,
   CalendarDays,
-  Upload,
+  ChevronRight,
+  Home,
   Save,
+  Upload,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // <-- PERBAIKAN: Impor useRouter
+import { useEffect, useState } from 'react';
 
 // Tentukan tipe data untuk form
 interface FormData {
@@ -101,32 +101,48 @@ export default function BukuEkspedisiForm({
 
   // Handler saat form disubmit
   // <-- PERBAIKAN: Menambahkan router.push()
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Di sini logika untuk mengirim data (formData) ke API
-    if (isEditMode) {
-      console.log('Mengupdate data:', formData);
-      // Panggil API UPDATE (PUT/PATCH) di sini
-    } else {
-      console.log('Menyimpan data baru:', formData);
-      // Panggil API CREATE (POST) di sini
+
+    const payload = {
+      nomorUrut: Number(formData.nomorUrut) || undefined,
+      nomorSurat: formData.nomorSurat,
+      tanggalSurat: formData.tanggalSurat,
+      tanggalKirim: formData.tanggalPengiriman,
+      perihal: formData.isiSingkat,
+      tujuan: formData.tujuan,
+      keterangan: formData.keterangan || null,
+      userId: "03b71cb8-885a-4e1d-830e-922058d3aae7", // TODO: nanti pakai auth beneran
+    };
+
+    const res = await fetch("/api/surat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await res.json();
+
+    if (!json.ok) {
+      alert("Gagal menyimpan: " + json.error);
+      return;
     }
-    
-    // Setelah submit, tampilkan alert dan navigasi kembali ke halaman daftar
-    alert(isEditMode ? 'Data berhasil diubah!' : 'Data berhasil disimpan!');
-    router.push('/buku-ekspedisi');
+
+    alert("Data berhasil disimpan!");
+    router.push("/buku-ekspedisi");
   };
 
+
   return (
-    <div className="p-6 md:p-8 bg-gray-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-gray-50 min-h-screen text-black">
       {/* Header Halaman (Breadcrumbs & Tombol Kembali) */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">
+          <h1 className="text-2xl font-semibold text-black">
             {isEditMode ? 'Ubah Data Ekspedisi' : 'Tambah Data Ekspedisi'}
           </h1>
           {/* Breadcrumbs */}
-          <nav className="flex items-center text-sm text-gray-500" aria-label="Breadcrumb">
+          <nav className="flex items-center text-sm text-black" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-blue-600">
               <Home size={16} />
             </Link>
@@ -135,7 +151,7 @@ export default function BukuEkspedisiForm({
               Buku Ekspedisi
             </Link>
             <ChevronRight size={16} className="mx-1" />
-            <span className="font-medium text-gray-700">Form Ekspedisi</span>
+            <span className="font-medium text-black">Form Ekspedisi</span>
           </nav>
         </div>
 
@@ -147,8 +163,8 @@ export default function BukuEkspedisiForm({
         </Link>
       </div>
 
-      {/* Konten Form dalam Card */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-200">
+  {/* Konten Form dalam Card */}
+  <div className="bg-white rounded-lg shadow-md border border-gray-200 text-black">
         <div className="bg-orange-400 p-4 rounded-t-lg">
           {/* Header Card Kosong Sesuai Gambar */}
         </div>
@@ -157,7 +173,7 @@ export default function BukuEkspedisiForm({
           {/* Baris Form (Grid) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
             {/* Label */}
-            <label htmlFor="nomorUrut" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="nomorUrut" className="text-sm font-medium text-black md:text-right pt-2">
               Nomor Urut
             </label>
             {/* Input */}
@@ -173,7 +189,7 @@ export default function BukuEkspedisiForm({
             </div>
 
             {/* Label */}
-            <label htmlFor="kodeSurat" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="kodeSurat" className="text-sm font-medium text-black md:text-right pt-2">
               Kode/Klasifikasi Surat
             </label>
             {/* Input */}
@@ -192,7 +208,7 @@ export default function BukuEkspedisiForm({
             </div>
 
             {/* Label */}
-            <label htmlFor="nomorSurat" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="nomorSurat" className="text-sm font-medium text-black md:text-right pt-2">
               Nomor Surat
             </label>
             {/* Input */}
@@ -208,7 +224,7 @@ export default function BukuEkspedisiForm({
             </div>
 
             {/* Label */}
-            <label htmlFor="tanggalSurat" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="tanggalSurat" className="text-sm font-medium text-black md:text-right pt-2">
               Tanggal Surat
             </label>
             {/* Input */}
@@ -224,13 +240,13 @@ export default function BukuEkspedisiForm({
                 />
                 <CalendarDays
                   size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black"
                 />
               </div>
             </div>
 
             {/* Label */}
-            <label htmlFor="tujuan" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="tujuan" className="text-sm font-medium text-black md:text-right pt-2">
               Tujuan
             </label>
             {/* Input */}
@@ -246,7 +262,7 @@ export default function BukuEkspedisiForm({
             </div>
 
             {/* Label */}
-            <label htmlFor="isiSingkat" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="isiSingkat" className="text-sm font-medium text-black md:text-right pt-2">
               Isi Singkat/Perihal
             </label>
             {/* Input */}
@@ -262,7 +278,7 @@ export default function BukuEkspedisiForm({
             </div>
             
             {/* Label */}
-            <label htmlFor="tanggalPengiriman" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="tanggalPengiriman" className="text-sm font-medium text-black md:text-right pt-2">
               Tanggal Pengiriman
             </label>
             {/* Input */}
@@ -278,13 +294,13 @@ export default function BukuEkspedisiForm({
                 />
                 <CalendarDays
                   size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black"
                 />
               </div>
             </div>
 
             {/* Label */}
-            <label htmlFor="berkas" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="berkas" className="text-sm font-medium text-black md:text-right pt-2">
               Berkas Scan Tanda Terima
             </label>
             {/* Input */}
@@ -304,7 +320,7 @@ export default function BukuEkspedisiForm({
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <span className="text-gray-500 text-sm">
+                <span className="text-black text-sm">
                   {formData.berkas ? formData.berkas.name : 'No file chosen'}
                 </span>
               </div>
@@ -314,7 +330,7 @@ export default function BukuEkspedisiForm({
             </div>
 
             {/* Label */}
-            <label htmlFor="keterangan" className="text-sm font-medium text-gray-700 md:text-right pt-2">
+            <label htmlFor="keterangan" className="text-sm font-medium text-black md:text-right pt-2">
               Keterangan
             </label>
             {/* Input */}
