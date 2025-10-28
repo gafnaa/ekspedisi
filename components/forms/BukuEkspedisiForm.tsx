@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link"; // Dikembalikan
-import { useRouter } from "next/navigation"; // Dikembalikan
+// import Link from "next/link"; // Dikembalikan -> Diganti sementara
+// import { useRouter } from "next/navigation"; // Dikembalikan -> Diganti sementara
 import {
   ArrowLeft,
   CalendarDays,
@@ -136,6 +136,21 @@ function DatePickerComponent({
     }
   }, [value]);
 
+  // State untuk mengontrol bulan yang ditampilkan di kalender (sesuai referensi Anda)
+  const [month, setMonth] = React.useState<Date | undefined>(selectedDate);
+
+  // Sinkronkan 'month' jika 'selectedDate' (dari prop 'value') berubah
+  React.useEffect(() => {
+    // Set bulan ke tanggal yang dipilih, atau ke bulan ini jika tidak ada tanggal
+    setMonth(selectedDate || new Date());
+  }, [selectedDate]);
+
+  // Tentukan rentang tahun untuk dropdown
+  const currentYear = new Date().getFullYear();
+  // Anda bisa sesuaikan rentang tahun ini
+  const fromYear = 1950;
+  const toYear = currentYear + 5;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -160,7 +175,13 @@ function DatePickerComponent({
             }
             setOpen(false);
           }}
-          initialFocus
+          // --- Properti Baru Ditambahkan Sesuai Referensi ---
+          captionLayout="dropdown" // Menggunakan dropdown
+          fromYear={fromYear} // Rentang tahun awal
+          toYear={toYear} // Rentang tahun akhir
+          month={month} // Bulan yang ditampilkan
+          onMonthChange={setMonth} // Handler saat bulan/tahun diubah
+          // --------------------------------------------------
         />
       </PopoverContent>
     </Popover>
@@ -193,7 +214,11 @@ export default function BukuEkspedisiForm({
   dataAwal,
   isEditMode,
 }: BukuEkspedisiFormProps) {
-  const router = useRouter(); // Dikembalikan
+  // const router = useRouter(); // Dikembalikan -> Diganti sementara
+  // Pengganti sementara untuk router agar lolos kompilasi
+  const router = {
+    push: (path: string) => (window.location.href = path),
+  };
 
   // State untuk menampung data form
   const [formData, setFormData] = useState<FormData>({
@@ -338,30 +363,30 @@ export default function BukuEkspedisiForm({
           <h1 className="text-2xl font-semibold text-black">
             {isEditMode ? "Ubah Data Ekspedisi" : "Tambah Data Ekspedisi"}
           </h1>
-          {/* Breadcrumbs (Dikembalikan ke <Link>) */}
+          {/* Breadcrumbs (Diganti sementara ke <a>) */}
           <nav
             className="flex items-center text-sm text-black"
             aria-label="Breadcrumb"
           >
-            <Link href="/" className="hover:text-blue-600">
+            <a href="/" className="hover:text-blue-600">
               <Home size={16} />
-            </Link>
+            </a>
             <ChevronRight size={16} className="mx-1" />
-            <Link href="/buku-ekspedisi" className="hover:text-blue-600">
+            <a href="/buku-ekspedisi" className="hover:text-blue-600">
               Buku Ekspedisi
-            </Link>
+            </a>
             <ChevronRight size={16} className="mx-1" />
             <span className="font-medium text-black">Form Ekspedisi</span>
           </nav>
         </div>
 
-        {/* Tombol Kembali (Dikembalikan ke <Link>) */}
-        <Link href="/buku-ekspedisi">
+        {/* Tombol Kembali (Diganti sementara ke <a>) */}
+        <a href="/buku-ekspedisi">
           <button className="mt-2 md:mt-0 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg shadow hover:bg-cyan-700 transition-colors">
             <ArrowLeft size={18} />
             Kembali Ke Buku Ekspedisi
           </button>
-        </Link>
+        </a>
       </div>
 
       {/* Konten Form dalam Card */}
@@ -547,16 +572,14 @@ export default function BukuEkspedisiForm({
 
           {/* Footer Form (Tombol Simpan & Batal) */}
           <div className="border-t border-gray-200 pt-6 flex justify-end gap-3">
-            {/* Tombol Batal (Dikembalikan ke <Link>) */}
-            <Link href="/buku-ekspedisi">
-              <button
-                type="button" // Tipe 'button' agar tidak mensubmit form
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors"
-              >
-                <X size={18} />
-                Batal
-              </button>
-            </Link>
+            {/* Tombol Batal (Diganti sementara ke <a>) */}
+            <a
+              href="/buku-ekspedisi"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors"
+            >
+              <X size={18} />
+              Batal
+            </a>
             <button
               type="submit"
               className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
