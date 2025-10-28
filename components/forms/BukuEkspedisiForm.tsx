@@ -11,12 +11,10 @@ import {
   Save,
   Upload,
   X,
-  AlertTriangle, // Untuk Notifikasi
-  CheckCircle, // Untuk Notifikasi
+  AlertTriangle,
+  CheckCircle,
 } from "lucide-react";
 
-// --- KOMPONEN SHADCN/UI (DIASUMSIKAN ADA) ---
-// Impor ini harus sesuai dengan struktur proyek Anda
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -24,12 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-// ---
 
-// === KOMPONEN ALERT KUSTOM (dari file table-client.tsx) ===
-/**
- * Komponen Alert kustom
- */
 const Alert = ({
   isVisible,
   onClose,
@@ -90,9 +83,7 @@ const Alert = ({
     </div>
   );
 };
-// === AKHIR DARI KOMPONEN ALERT ===
 
-// === HELPER FUNGSI TANGGAL ===
 const toYYYYMMDD = (date: Date): string => {
   return date.toISOString().split("T")[0];
 };
@@ -107,20 +98,18 @@ const formatDisplayDate = (dateString: string | undefined | null): string => {
       day: "2-digit",
       month: "long",
       year: "numeric",
-      // timeZone: "UTC", // Remove this to use local timezone for display
     });
   } catch (e) {
     return "Tanggal tidak valid";
   }
 };
 
-// === KOMPONEN DATE PICKER (berdasarkan referensi shadcn) ===
 function DatePickerComponent({
   value,
   onSelect,
 }: {
-  value: string; // value adalah string YYYY-MM-DD
-  onSelect: (date: string) => void; // onSelect mengembalikan string YYYY-MM-DD
+  value: string;
+  onSelect: (date: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -363,7 +352,7 @@ export default function BukuEkspedisiForm({
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen text-black">
       {/* Kontainer Notifikasi (Tengah Atas) */}
-      <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm">
+      <div className="fixed top-4 sm:top-16 left-1/2 -translate-x-1/2 z-50 w-11/12 sm:w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
         <Alert
           isVisible={!!notif}
           color={notif?.color || "success"}
