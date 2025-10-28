@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-// import Link from "next/link"; // Dikembalikan -> Diganti sementara
-// import { useRouter } from "next/navigation"; // Dikembalikan -> Diganti sementara
+import Link from "next/link"; // Dikembalikan -> DIKOMENTARI SEMENTARA
+import { useRouter } from "next/navigation"; // Dikembalikan -> DIKOMENTARI SEMENTARA
 import {
   ArrowLeft,
   CalendarDays,
@@ -100,14 +100,14 @@ const toYYYYMMDD = (date: Date): string => {
 const formatDisplayDate = (dateString: string | undefined | null): string => {
   if (!dateString) return "Pilih tanggal";
   try {
-    // Membuat tanggal dalam UTC untuk menghindari masalah timezone
     const parts = dateString.split("-").map(Number);
-    const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    // Create a Date object representing the date in the LOCAL timezone.
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
     return date.toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "long",
       year: "numeric",
-      timeZone: "UTC", // Pastikan konsisten
+      // timeZone: "UTC", // Remove this to use local timezone for display
     });
   } catch (e) {
     return "Tanggal tidak valid";
@@ -129,7 +129,9 @@ function DatePickerComponent({
     if (!value) return undefined;
     try {
       const parts = value.split("-").map(Number);
-      // Gunakan UTC untuk konsistensi
+      // Create a Date object representing the date at midnight UTC.
+      // This ensures that the Date object passed to the Calendar component
+      // is interpreted consistently, regardless of the user's local timezone.
       return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
     } catch (e) {
       return undefined;
@@ -171,7 +173,11 @@ function DatePickerComponent({
           selected={selectedDate}
           onSelect={(date) => {
             if (date) {
-              onSelect(toYYYYMMDD(date)); // Kembalikan sebagai YYYY-MM-DD
+              // Format the date using local components to YYYY-MM-DD string.
+              const year = date.getFullYear();
+              const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Month is 0-indexed
+              const day = date.getDate().toString().padStart(2, "0");
+              onSelect(`${year}-${month}-${day}`);
             }
             setOpen(false);
           }}
@@ -214,7 +220,7 @@ export default function BukuEkspedisiForm({
   dataAwal,
   isEditMode,
 }: BukuEkspedisiFormProps) {
-  // const router = useRouter(); // Dikembalikan -> Diganti sementara
+  // const router = useRouter(); // Dikembalikan -> DIKOMENTARI SEMENTARA
   // Pengganti sementara untuk router agar lolos kompilasi
   const router = {
     push: (path: string) => (window.location.href = path),
@@ -248,12 +254,8 @@ export default function BukuEkspedisiForm({
         ...prev,
         ...dataAwal,
         // Pastikan format tanggal sesuai untuk input (YYYY-MM-DD)
-        tanggalSurat: dataAwal.tanggalSurat
-          ? new Date(dataAwal.tanggalSurat).toISOString().split("T")[0]
-          : "",
-        tanggalPengiriman: dataAwal.tanggalPengiriman
-          ? new Date(dataAwal.tanggalPengiriman).toISOString().split("T")[0]
-          : "",
+        tanggalSurat: dataAwal.tanggalSurat || "",
+        tanggalPengiriman: dataAwal.tanggalPengiriman || "",
       }));
     }
   }, [isEditMode, dataAwal]);
@@ -340,7 +342,7 @@ export default function BukuEkspedisiForm({
 
     // Alihkan setelah notifikasi terlihat
     setTimeout(() => {
-      router.push("/buku-ekspedisi"); // Dikembalikan
+      router.push("/buku-ekspedisi"); // Dikembalikan -> Menggunakan router pengganti
     }, 2000);
   };
 
@@ -381,11 +383,12 @@ export default function BukuEkspedisiForm({
         </div>
 
         {/* Tombol Kembali (Diganti sementara ke <a>) */}
-        <a href="/buku-ekspedisi">
-          <button className="mt-2 md:mt-0 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg shadow hover:bg-cyan-700 transition-colors">
-            <ArrowLeft size={18} />
-            Kembali Ke Buku Ekspedisi
-          </button>
+        <a
+          href="/buku-ekspedisi"
+          className="mt-2 md:mt-0 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg shadow hover:bg-cyan-700 transition-colors cursor-pointer"
+        >
+          <ArrowLeft size={18} />
+          Kembali Ke Buku Ekspedisi
         </a>
       </div>
 
@@ -575,7 +578,7 @@ export default function BukuEkspedisiForm({
             {/* Tombol Batal (Diganti sementara ke <a>) */}
             <a
               href="/buku-ekspedisi"
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors cursor-pointer"
             >
               <X size={18} />
               Batal
