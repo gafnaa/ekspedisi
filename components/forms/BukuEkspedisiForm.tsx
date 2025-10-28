@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link"; // Dikembalikan -> DIKOMENTARI SEMENTARA
-import { useRouter } from "next/navigation"; // Dikembalikan -> DIKOMENTARI SEMENTARA
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
@@ -222,21 +222,34 @@ export default function BukuEkspedisiForm({
 }: BukuEkspedisiFormProps) {
   // const router = useRouter(); // Dikembalikan -> DIKOMENTARI SEMENTARA
   // Pengganti sementara untuk router agar lolos kompilasi
-  const router = {
-    push: (path: string) => (window.location.href = path),
-  };
+  const router = useRouter();
 
   // State untuk menampung data form
-  const [formData, setFormData] = useState<FormData>({
-    nomorUrut: "",
-    kodeSurat: "",
-    nomorSurat: "",
-    tanggalSurat: "",
-    tujuan: "",
-    isiSingkat: "",
-    tanggalPengiriman: "",
-    berkas: null,
-    keterangan: "",
+  const [formData, setFormData] = useState<FormData>(() => {
+    if (isEditMode && dataAwal) {
+      return {
+        nomorUrut: dataAwal.nomorUrut || "",
+        kodeSurat: dataAwal.kodeSurat || "",
+        nomorSurat: dataAwal.nomorSurat || "",
+        tanggalSurat: dataAwal.tanggalSurat || "",
+        tujuan: dataAwal.tujuan || "",
+        isiSingkat: dataAwal.isiSingkat || "",
+        tanggalPengiriman: dataAwal.tanggalPengiriman || "",
+        berkas: dataAwal.berkas || null,
+        keterangan: dataAwal.keterangan || "",
+      };
+    }
+    return {
+      nomorUrut: "",
+      kodeSurat: "",
+      nomorSurat: "",
+      tanggalSurat: "",
+      tujuan: "",
+      isiSingkat: "",
+      tanggalPengiriman: "",
+      berkas: null,
+      keterangan: "",
+    };
   });
 
   // State untuk notifikasi (menggantikan alert)
@@ -245,20 +258,7 @@ export default function BukuEkspedisiForm({
     title: string;
     description: string;
   } | null>(null);
-
-  // useEffect ini akan mengisi form jika kita dalam mode Edit
-  useEffect(() => {
-    if (isEditMode && dataAwal) {
-      // Mengisi state dengan data awal
-      setFormData((prev) => ({
-        ...prev,
-        ...dataAwal,
-        // Pastikan format tanggal sesuai untuk input (YYYY-MM-DD)
-        tanggalSurat: dataAwal.tanggalSurat || "",
-        tanggalPengiriman: dataAwal.tanggalPengiriman || "",
-      }));
-    }
-  }, [isEditMode, dataAwal]);
+  // useEffect for dataAwal is removed as state is initialized directly
 
   // Handler untuk mengubah state saat input diisi
   const handleChange = (
@@ -304,8 +304,25 @@ export default function BukuEkspedisiForm({
     e.preventDefault();
     setNotif(null); // Bersihkan notif lama
 
+    // Validasi form
+    if (
+      !formData.nomorUrut ||
+      !formData.nomorSurat ||
+      !formData.tanggalSurat ||
+      !formData.tujuan ||
+      !formData.isiSingkat ||
+      !formData.tanggalPengiriman
+    ) {
+      setNotif({
+        color: "danger",
+        title: "Gagal menyimpan",
+        description: "Tolong Lengkapi Data Secara Lengkap.",
+      });
+      return;
+    }
+
     const payload = {
-      nomorUrut: Number(formData.nomorUrut) || undefined,
+      nomorUrut: Number(formData.nomorUrut), // Pastikan ini number
       nomorSurat: formData.nomorSurat,
       tanggalSurat: formData.tanggalSurat,
       tanggalKirim: formData.tanggalPengiriman,
@@ -324,7 +341,6 @@ export default function BukuEkspedisiForm({
     const json = await res.json();
 
     if (!json.ok) {
-      // Ganti alert dengan notifikasi
       setNotif({
         color: "danger",
         title: "Gagal menyimpan",
@@ -333,14 +349,12 @@ export default function BukuEkspedisiForm({
       return;
     }
 
-    // Ganti alert dengan notifikasi
     setNotif({
       color: "success",
       title: "Data berhasil disimpan!",
       description: "Anda akan dialihkan kembali ke halaman utama.",
     });
 
-    // Alihkan setelah notifikasi terlihat
     setTimeout(() => {
       router.push("/buku-ekspedisi"); // Dikembalikan -> Menggunakan router pengganti
     }, 2000);
@@ -348,8 +362,8 @@ export default function BukuEkspedisiForm({
 
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen text-black">
-      {/* Kontainer Notifikasi (Kanan Atas) */}
-      <div className="fixed top-4 right-4 z-50 w-full max-w-sm">
+      {/* Kontainer Notifikasi (Tengah Atas) */}
+      <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm">
         <Alert
           isVisible={!!notif}
           color={notif?.color || "success"}
@@ -370,26 +384,26 @@ export default function BukuEkspedisiForm({
             className="flex items-center text-sm text-black"
             aria-label="Breadcrumb"
           >
-            <a href="/" className="hover:text-blue-600">
+            <Link href="/" className="hover:text-blue-600">
               <Home size={16} />
-            </a>
+            </Link>
             <ChevronRight size={16} className="mx-1" />
-            <a href="/buku-ekspedisi" className="hover:text-blue-600">
+            <Link href="/buku-ekspedisi" className="hover:text-blue-600">
               Buku Ekspedisi
-            </a>
+            </Link>
             <ChevronRight size={16} className="mx-1" />
             <span className="font-medium text-black">Form Ekspedisi</span>
           </nav>
         </div>
 
-        {/* Tombol Kembali (Diganti sementara ke <a>) */}
-        <a
+        {/* Tombol Kembali */}
+        <Link
           href="/buku-ekspedisi"
           className="mt-2 md:mt-0 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg shadow hover:bg-cyan-700 transition-colors cursor-pointer"
         >
           <ArrowLeft size={18} />
           Kembali Ke Buku Ekspedisi
-        </a>
+        </Link>
       </div>
 
       {/* Konten Form dalam Card */}
@@ -575,14 +589,14 @@ export default function BukuEkspedisiForm({
 
           {/* Footer Form (Tombol Simpan & Batal) */}
           <div className="border-t border-gray-200 pt-6 flex justify-end gap-3">
-            {/* Tombol Batal (Diganti sementara ke <a>) */}
-            <a
+            {/* Tombol Batal */}
+            <Link
               href="/buku-ekspedisi"
               className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors cursor-pointer"
             >
               <X size={18} />
               Batal
-            </a>
+            </Link>
             <button
               type="submit"
               className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
