@@ -1,7 +1,10 @@
 // app/buku-ekspedisi/page.tsx
+"use client"; // Add use client directive
+
 import TableClient from "@/app/buku-ekspedisi/table-client";
 import { Download, Plus, Printer, Search } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react"; // Import useState and useEffect
 
 export const dynamic = "force-dynamic"; // or use revalidate if you prefer ISR
 
@@ -14,8 +17,38 @@ async function getData() {
   return json.data;
 }
 
-export default async function BukuEkspedisiPage() {
-  const dataEkspedisi = await getData();
+export default function BukuEkspedisiPage() {
+  // Change to client component
+  const [dataEkspedisi, setDataEkspedisi] = useState([]);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // State for items per page
+  const [selectedYear, setSelectedYear] = useState(""); // State for selected year
+
+  useEffect(() => {
+    async function fetchData() {
+      const data = await getData();
+      setDataEkspedisi(data);
+    }
+    fetchData();
+  }, []);
+
+  // Extract distinct years from dataEkspedisi
+  const distinctYears = Array.from(
+    new Set(
+      dataEkspedisi
+        .map((item: any) => new Date(item.tglSurat).getFullYear())
+        .filter((year) => !isNaN(year)) // Filter out invalid years
+    )
+  ).sort((a, b) => b - a); // Sort in descending order
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setItemsPerPage(Number(e.target.value));
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedYear(e.target.value);
+  };
 
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen">
@@ -46,14 +79,26 @@ export default async function BukuEkspedisiPage() {
         {/* Area Filter dan Pencarian */}
         <div className="p-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <select className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black">
-              <option>Tahun</option>
-              {/* TODO: Populate from distinct years if needed */}
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              onChange={handleYearChange}
+              value={selectedYear}
+            >
+              <option value="">Tahun</option>
+              {distinctYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
             </select>
-            <select className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black">
-              <option>10</option>
-              <option>25</option>
-              <option>50</option>
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              onChange={handleItemsPerPageChange}
+              value={itemsPerPage}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
             </select>
             <span className="text-black">entri</span>
           </div>
@@ -72,7 +117,12 @@ export default async function BukuEkspedisiPage() {
         </div>
 
         {/* Tabel Data (Client Component for interactivity like Delete) */}
-        <TableClient dataEkspedisi={dataEkspedisi} />
+        <TableClient
+          key={`${itemsPerPage}-${selectedYear}`}
+          dataEkspedisi={dataEkspedisi}
+          itemsPerPage={itemsPerPage}
+          selectedYear={selectedYear}
+        />
       </div>
     </div>
   );

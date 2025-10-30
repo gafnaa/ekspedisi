@@ -184,8 +184,12 @@ type Row = {
 
 export default function TableClient({
   dataEkspedisi,
+  itemsPerPage,
+  selectedYear,
 }: {
   dataEkspedisi: Row[];
+  itemsPerPage: number;
+  selectedYear: string;
 }) {
   const fmt = (iso?: string | null) => {
     if (!iso) return "-";
@@ -197,15 +201,27 @@ export default function TableClient({
     });
   };
 
+  // Filter data based on selectedYear
+  const filteredData = selectedYear
+    ? dataEkspedisi.filter(
+        (item) =>
+          new Date(item.tglSurat).getFullYear().toString() === selectedYear
+      )
+    : dataEkspedisi;
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // Default items per page
 
-  const totalPages = Math.ceil(dataEkspedisi.length / itemsPerPage);
+  // Reset current page when itemsPerPage or selectedYear changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage, selectedYear]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedData = dataEkspedisi.slice(startIndex, endIndex);
+  const paginatedData = filteredData.slice(startIndex, endIndex);
 
   const handlePreviousPage = () => {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
@@ -213,13 +229,6 @@ export default function TableClient({
 
   const handleNextPage = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  };
-
-  const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setItemsPerPage(Number(e.target.value));
-    setCurrentPage(1); // Reset to first page when items per page changes
   };
 
   const showPreviousButton = totalPages > 1 && currentPage > 1;
@@ -387,7 +396,7 @@ export default function TableClient({
       {/* Footer Tabel (Info dan Paginasi) */}
       <div className="p-4 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
         <span>
-          Menampilkan {paginatedData.length} dari {dataEkspedisi.length} entri
+          Menampilkan {paginatedData.length} dari {filteredData.length} entri
         </span>
         <div className="flex items-center gap-1 mt-2 md:mt-0">
           {showPreviousButton && (
