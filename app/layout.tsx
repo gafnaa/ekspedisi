@@ -33,7 +33,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${inter.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="page-transition-container">{children}</div>
       </body>
     </html>
   );

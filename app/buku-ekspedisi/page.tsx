@@ -73,22 +73,6 @@ export default async function BukuEkspedisiPage() {
 
         {/* Tabel Data (Client Component for interactivity like Delete) */}
         <TableClient dataEkspedisi={dataEkspedisi} />
-
-        {/* Footer Tabel (Info dan Paginasi) */}
-        <div className="p-4 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
-          <span>Menampilkan {dataEkspedisi.length} entri</span>
-          <div className="flex items-center gap-1 mt-2 md:mt-0">
-            <button className="px-3 py-1 border rounded-md hover:bg-gray-100">
-              Sebelumnya
-            </button>
-            <button className="px-3 py-1 border rounded-md bg-blue-600 text-white">
-              1
-            </button>
-            <button className="px-3 py-1 border rounded-md hover:bg-gray-100">
-              Selanjutnya
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

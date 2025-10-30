@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-// import Link from "next/link"; // Dihapus - diganti dengan <a>
-// import { useRouter } from "next/navigation"; // Dihapus - diganti dengan window.location.reload
-// import { Alert, Modal, Button } from "@heroui/react"; // Dihapus - dibuat ulang di bawah
+
 import {
   ArrowUpDown,
   Pencil,
@@ -13,14 +11,9 @@ import {
   X,
   AlertTriangle, // Ditambahkan untuk ikon modal
   CheckCircle, // Ditambahkan untuk notifikasi sukses
+  Search, // Ditambahkan untuk ikon pencarian
 } from "lucide-react";
 
-// === KOMPONEN UI DIBUAT ULANG ===
-// Dibuat ulang untuk menggantikan @heroui/react
-
-/**
- * Komponen Button kustom
- */
 const Button = ({
   onClick,
   color = "primary",
@@ -194,8 +187,6 @@ export default function TableClient({
 }: {
   dataEkspedisi: Row[];
 }) {
-  // const router = useRouter(); // Dihapus
-
   const fmt = (iso?: string | null) => {
     if (!iso) return "-";
     const d = new Date(iso);
@@ -205,6 +196,34 @@ export default function TableClient({
       year: "numeric",
     });
   };
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // Default items per page
+
+  const totalPages = Math.ceil(dataEkspedisi.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = dataEkspedisi.slice(startIndex, endIndex);
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when items per page changes
+  };
+
+  const showPreviousButton = totalPages > 1 && currentPage > 1;
+  const showNextButton = totalPages > 1 && currentPage < totalPages;
 
   // State untuk notifikasi error
   const [errorAlertVisible, setErrorAlertVisible] = useState(false);
@@ -316,7 +335,7 @@ export default function TableClient({
           </tr>
         </thead>
         <tbody>
-          {dataEkspedisi.map((item) => (
+          {paginatedData.map((item) => (
             <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
               <td className="px-6 py-4 font-medium">{item.no}</td>
               <td className="px-6 py-4">
@@ -364,6 +383,36 @@ export default function TableClient({
           ))}
         </tbody>
       </table>
+
+      {/* Footer Tabel (Info dan Paginasi) */}
+      <div className="p-4 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+        <span>
+          Menampilkan {paginatedData.length} dari {dataEkspedisi.length} entri
+        </span>
+        <div className="flex items-center gap-1 mt-2 md:mt-0">
+          {showPreviousButton && (
+            <button
+              onClick={handlePreviousPage}
+              className="px-3 py-1 border rounded-md hover:bg-gray-100"
+            >
+              Sebelumnya
+            </button>
+          )}
+          {totalPages > 0 && (
+            <button className="px-3 py-1 border rounded-md bg-blue-600 text-white">
+              {currentPage}
+            </button>
+          )}
+          {showNextButton && (
+            <button
+              onClick={handleNextPage}
+              className="px-3 py-1 border rounded-md hover:bg-gray-100"
+            >
+              Selanjutnya
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Kontainer Notifikasi (Kanan Bawah) */}
       <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm">
