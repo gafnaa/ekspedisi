@@ -186,9 +186,9 @@ function DatePickerComponent({
 
 // --- KOMPONEN FORM UTAMA ---
 
-// Tentukan tipe data untuk form
+// Modify the FormData interface to make nomorUrut optional
 interface FormData {
-  nomorUrut: string;
+  nomorUrut?: string; // Make it optional
   kodeSurat: string;
   nomorSurat: string;
   tanggalSurat: string; // Tetap YYYY-MM-DD
@@ -288,14 +288,23 @@ export default function BukuEkspedisiForm({
     }
   };
 
+  // Add this utility function near the top with other utility functions
+  const formatDateForAPI = (dateStr: string) => {
+    try {
+      const [year, month, day] = dateStr.split("-").map(Number);
+      return new Date(year, month - 1, day).toISOString();
+    } catch (e) {
+      return null;
+    }
+  };
+
   // Handler saat form disubmit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setNotif(null); // Bersihkan notif lama
+    setNotif(null);
 
-    // Validasi form
+    // Validation remains the same
     if (
-      !formData.nomorUrut ||
       !formData.nomorSurat ||
       !formData.tanggalSurat ||
       !formData.tujuan ||
@@ -310,15 +319,27 @@ export default function BukuEkspedisiForm({
       return;
     }
 
+    // Format dates for API
+    const tanggalSurat = formatDateForAPI(formData.tanggalSurat);
+    const tanggalKirim = formatDateForAPI(formData.tanggalPengiriman);
+
+    if (!tanggalSurat || !tanggalKirim) {
+      setNotif({
+        color: "danger",
+        title: "Gagal menyimpan",
+        description: "Format tanggal tidak valid.",
+      });
+      return;
+    }
+
     const payload = {
-      nomorUrut: Number(formData.nomorUrut), // Pastikan ini number
       nomorSurat: formData.nomorSurat,
-      tanggalSurat: formData.tanggalSurat,
-      tanggalKirim: formData.tanggalPengiriman,
+      tanggalSurat,
+      tanggalKirim,
       perihal: formData.isiSingkat,
       tujuan: formData.tujuan,
       keterangan: formData.keterangan || null,
-      userId: "4cecc9e3-f026-48b4-910f-7cbd895a6d3e", // TODO: nanti pakai auth beneran
+      userId: "ded21822-4303-47c9-8756-12b26419b009",
     };
 
     const res = await fetch("/api/surat", {
@@ -404,23 +425,7 @@ export default function BukuEkspedisiForm({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Baris Form (Grid) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
-            {/* Nomor Urut */}
-            <label
-              htmlFor="nomorUrut"
-              className="text-sm font-medium text-black md:text-right pt-2"
-            >
-              Nomor Urut
-            </label>
-            <div className="md:col-span-2">
-              <input
-                type="number"
-                id="nomorUrut"
-                name="nomorUrut"
-                value={formData.nomorUrut}
-                onChange={handleChange}
-                className="w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {/* Remove Nomor Urut input field */}
 
             {/* Kode/Klasifikasi Surat */}
             <label

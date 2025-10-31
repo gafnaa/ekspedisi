@@ -9,9 +9,9 @@ import {
   DownloadCloud,
   Download,
   X,
-  AlertTriangle, // Ditambahkan untuk ikon modal
-  CheckCircle, // Ditambahkan untuk notifikasi sukses
-  Search, // Ditambahkan untuk ikon pencarian
+  AlertTriangle,
+  CheckCircle,
+  Search,
 } from "lucide-react";
 
 const Button = ({
@@ -217,22 +217,34 @@ export default function TableClient({
     setCurrentPage(1);
   }, [itemsPerPage, selectedYear]);
 
+  // Update pagination calculations
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
-  const handlePreviousPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  // Update pagination handlers
+  const handlePreviousPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Previous clicked", currentPage);
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
-  const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const handleNextPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Next clicked", currentPage, totalPages);
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
-  const showPreviousButton = totalPages > 1 && currentPage > 1;
-  const showNextButton = totalPages > 1 && currentPage < totalPages;
+  // Update button visibility conditions
+  const showPreviousButton = currentPage > 1;
+  const showNextButton = currentPage < totalPages;
 
   // State untuk notifikasi error
   const [errorAlertVisible, setErrorAlertVisible] = useState(false);
@@ -401,6 +413,7 @@ export default function TableClient({
         <div className="flex items-center gap-1 mt-2 md:mt-0">
           {showPreviousButton && (
             <button
+              type="button"
               onClick={handlePreviousPage}
               className="px-3 py-1 border rounded-md hover:bg-gray-100"
             >
@@ -408,12 +421,13 @@ export default function TableClient({
             </button>
           )}
           {totalPages > 0 && (
-            <button className="px-3 py-1 border rounded-md bg-blue-600 text-white">
+            <span className="px-3 py-1 border rounded-md bg-blue-600 text-white">
               {currentPage}
-            </button>
+            </span>
           )}
           {showNextButton && (
             <button
+              type="button"
               onClick={handleNextPage}
               className="px-3 py-1 border rounded-md hover:bg-gray-100"
             >
