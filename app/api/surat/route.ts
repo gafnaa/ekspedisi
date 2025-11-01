@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const rows = await prisma.suratKeluar.findMany({
       where: { deletedAt: null },
-      orderBy: { nomorUrut: "asc" }
+      orderBy: { nomorUrut: "asc" },
     });
 
     const data = rows.map((r: any) => ({
@@ -22,7 +22,10 @@ export async function GET() {
     return NextResponse.json({ ok: true, data });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ ok: false, error: "Failed to get data" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Failed to get data" },
+      { status: 500 }
+    );
   }
 }
 
@@ -30,36 +33,52 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const exists = await prisma.suratKeluar.findUnique({
-      where: { nomorSurat: body.nomorSurat },
-    });
+    // Get the current year
+    const currentYear = new Date(body.tanggalSurat).getFullYear();
 
-    if (exists) {
-      return NextResponse.json(
-        { ok: false, error: "Nomor surat sudah digunakan!" },
-        { status: 400 }
-      );
-    }
-
-    const created = await prisma.suratKeluar.create({
-      data: {
-        nomorUrut: body.nomorUrut,
-        nomorSurat: body.nomorSurat,
-        tanggalSurat: new Date(body.tanggalSurat),
-        tanggalKirim: new Date(body.tanggalKirim),
-        perihal: body.perihal,
-        tujuan: body.tujuan,
-        keterangan: body.keterangan,
-        userId: body.userId,
+    // Count total records for current year instead of getting max
+    const recordCount = await prisma.suratKeluar.count({
+      where: {
+        tanggalSurat: {
+          gte: new Date(currentYear, 0, 1),
+          lt: new Date(currentYear + 1, 0, 1),
+        },
       },
     });
 
-    return NextResponse.json({ ok: true, data: created });
+    // Next number is simply count + 1
+    const nextNomorUrut = recordCount + 1;
+
+    // Create new record
+    const result = await prisma.suratKeluar.create({
+      data: {
+        ...body,
+        nomorUrut: nextNomorUrut,
+        tanggalSurat: new Date(body.tanggalSurat),
+        tanggalKirim: new Date(body.tanggalKirim),
+      },
+    });
+
+    return Response.json({ ok: true, data: result });
   } catch (error: any) {
-    return NextResponse.json(
-      { ok: false, error: error.message },
-      { status: 400 }
-    );
+    console.error("Error creating surat:", error);
+    
+    // Check if it's a Prisma unique constraint error on nomorSurat
+    if (
+      error?.code === "P2002" &&
+      (error?.meta?.target?.includes("nomorSurat") || 
+       String(error).includes("nomorSurat") ||
+       String(error).includes("Unique constraint failed on the fields: (`nomorSurat`"))
+    ) {
+      return Response.json({
+        ok: false,
+        error: "Nomor Surat tidak boleh sama dengan data yang sudah ada",
+      });
+    }
+    
+    return Response.json({
+      ok: false,
+      error: "Terjadi kesalahan saat menyimpan data. Silakan coba lagi.",
+    });
   }
 }
-

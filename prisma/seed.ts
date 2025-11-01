@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
+import { PrismaClient } from "@prisma/client";
+import { randomUUID } from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -15,45 +15,45 @@ type SuratSeed = {
 
 async function upsertUsers() {
   const admin = await prisma.user.upsert({
-    where: { username: 'admin' },
+    where: { username: "admin" },
     update: {},
     create: {
       id: randomUUID(),
-      username: 'admin',
-      namaLengkap: 'Administrator',
-      role: 'ADMIN',
+      username: "admin",
+      namaLengkap: "Administrator",
+      role: "ADMIN",
     },
   });
 
   const staf = await prisma.user.upsert({
-    where: { username: 'staf1' },
+    where: { username: "staf1" },
     update: {},
     create: {
       id: randomUUID(),
-      username: 'staf1',
-      namaLengkap: 'Staf Ekspedisi',
-      role: 'STAF',
+      username: "staf1",
+      namaLengkap: "Staf Ekspedisi",
+      role: "STAF",
     },
   });
 
-  // Optional: synthetic login logs
+  // Tambahkan log login dummy
   await prisma.activityLog.createMany({
     data: [
       {
         id: randomUUID(),
         userId: admin.id,
-        action: 'LOGIN',
-        entityType: 'USER',
+        action: "LOGIN",
+        entityType: "USER",
         entityId: admin.id,
-        metadata: { note: 'Seeded admin login (synthetic).' },
+        metadata: { note: "Seeded admin login (synthetic)." },
       },
       {
         id: randomUUID(),
         userId: staf.id,
-        action: 'LOGIN',
-        entityType: 'USER',
+        action: "LOGIN",
+        entityType: "USER",
         entityId: staf.id,
-        metadata: { note: 'Seeded staf login (synthetic).' },
+        metadata: { note: "Seeded staf login (synthetic)." },
       },
     ],
     skipDuplicates: true,
@@ -65,6 +65,7 @@ async function upsertUsers() {
 function generateSuratSeeds(): SuratSeed[] {
   const base = new Date();
   const rows: SuratSeed[] = [];
+
   for (let i = 1; i <= 10; i++) {
     const tSurat = new Date(base);
     tSurat.setDate(base.getDate() - (15 - i));
@@ -73,14 +74,18 @@ function generateSuratSeeds(): SuratSeed[] {
     tKirim.setDate(tSurat.getDate() + 1);
 
     rows.push({
-      nomorSurat: `001/${String(i).padStart(3, '0')}/EKSP/${new Date().getFullYear()}`,
+      nomorSurat: `001/${String(i).padStart(
+        3,
+        "0"
+      )}/EKSP/${new Date().getFullYear()}`,
       tanggalSurat: tSurat.toISOString(),
       tanggalKirim: tKirim.toISOString(),
       perihal: `Permohonan Informasi #${i}`,
       tujuan: `Instansi Tujuan ${i}`,
-      keterangan: i % 3 === 0 ? 'Dikirim via kurir.' : null,
+      keterangan: i % 3 === 0 ? "Dikirim via kurir." : null,
     });
   }
+
   return rows;
 }
 
@@ -90,7 +95,7 @@ async function upsertSuratKeluar(createdByUserId: string) {
 
   for (const s of seeds) {
     const surat = await prisma.suratKeluar.upsert({
-      where: { nomorSurat: s.nomorSurat }, // unique in schema
+      where: { nomorSurat: s.nomorSurat },
       update: {
         perihal: s.perihal,
         tujuan: s.tujuan,
@@ -104,46 +109,25 @@ async function upsertSuratKeluar(createdByUserId: string) {
         perihal: s.perihal,
         tujuan: s.tujuan,
         keterangan: s.keterangan,
-        userId: createdByUserId, // createdBy relation
+        userId: createdByUserId,
       },
     });
+
     created.push(surat);
 
+    // Log setiap pembuatan surat
     await prisma.activityLog.create({
       data: {
         id: randomUUID(),
         userId: createdByUserId,
-        action: 'CREATE',
-        entityType: 'SURAT_KELUAR',
+        action: "CREATE",
+        entityType: "SURAT_KELUAR",
         entityId: surat.id,
         metadata: {
           nomorSurat: surat.nomorSurat,
           tujuan: surat.tujuan,
           perihal: surat.perihal,
         },
-      },
-    });
-  }
-
-  // Example: soft delete last record to demonstrate auditability
-  if (created.length > 0) {
-    const target = created[created.length - 1];
-    const now = new Date();
-    await prisma.suratKeluar.update({
-      where: { id: target.id },
-      data: {
-        deletedAt: now,
-        deletedBy: { connect: { id: createdByUserId } },
-      },
-    });
-    await prisma.activityLog.create({
-      data: {
-        id: randomUUID(),
-        userId: createdByUserId,
-        action: 'DELETE',
-        entityType: 'SURAT_KELUAR',
-        entityId: target.id,
-        metadata: { reason: 'Soft delete demo in seed.' },
       },
     });
   }
@@ -156,15 +140,15 @@ async function logExportExample(userId: string) {
     data: {
       id: randomUUID(),
       userId,
-      action: 'EXPORT',
-      entityType: 'SURAT_KELUAR',
-      entityId: 'BULK', // sentinel for bulk action
+      action: "EXPORT",
+      entityType: "SURAT_KELUAR",
+      entityId: "BULK", // tanda bulk action
       metadata: {
         filter: {
-          tanggalKirim_gte: '2025-01-01',
-          tujuan_contains: 'Instansi',
+          tanggalKirim_gte: "2025-01-01",
+          tujuan_contains: "Instansi",
         },
-        format: 'CSV',
+        format: "CSV",
       },
     },
   });
@@ -185,9 +169,9 @@ async function main() {
 }
 
 main()
-  .then(() => console.log('✅ Seed completed.'))
+  .then(() => console.log("✅ Seed completed tanpa soft delete."))
   .catch((e) => {
-    console.error('❌ Seed error:', e);
+    console.error("❌ Seed error:", e);
     process.exitCode = 1;
   })
   .finally(async () => {

@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-// import Link from "next/link"; // Dihapus - diganti dengan <a>
-// import { useRouter } from "next/navigation"; // Dihapus - diganti dengan window.location.reload
-// import { Alert, Modal, Button } from "@heroui/react"; // Dihapus - dibuat ulang di bawah
+
 import {
   ArrowUpDown,
   Pencil,
@@ -11,16 +9,11 @@ import {
   DownloadCloud,
   Download,
   X,
-  AlertTriangle, // Ditambahkan untuk ikon modal
-  CheckCircle, // Ditambahkan untuk notifikasi sukses
+  AlertTriangle,
+  CheckCircle,
+  Search,
 } from "lucide-react";
 
-// === KOMPONEN UI DIBUAT ULANG ===
-// Dibuat ulang untuk menggantikan @heroui/react
-
-/**
- * Komponen Button kustom
- */
 const Button = ({
   onClick,
   color = "primary",
@@ -191,11 +184,15 @@ type Row = {
 
 export default function TableClient({
   dataEkspedisi,
+  itemsPerPage,
+  selectedYear,
+  searchQuery = "",
 }: {
   dataEkspedisi: Row[];
+  itemsPerPage: number;
+  selectedYear: string;
+  searchQuery?: string;
 }) {
-  // const router = useRouter(); // Dihapus
-
   const fmt = (iso?: string | null) => {
     if (!iso) return "-";
     const d = new Date(iso);
@@ -205,6 +202,69 @@ export default function TableClient({
       year: "numeric",
     });
   };
+
+  // Filter data based on selectedYear and searchQuery
+  let filteredData = dataEkspedisi;
+
+  // Filter by year
+  if (selectedYear) {
+    filteredData = filteredData.filter(
+      (item) =>
+        new Date(item.tglSurat).getFullYear().toString() === selectedYear
+    );
+  }
+
+  // Filter by search query (search in multiple fields)
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase().trim();
+    filteredData = filteredData.filter((item) => {
+      return (
+        item.noSurat.toLowerCase().includes(query) ||
+        item.isiSingkat.toLowerCase().includes(query) ||
+        item.ditujukan.toLowerCase().includes(query) ||
+        item.keterangan.toLowerCase().includes(query) ||
+        fmt(item.tglSurat).toLowerCase().includes(query) ||
+        fmt(item.tglPengiriman).toLowerCase().includes(query)
+      );
+    });
+  }
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset current page when itemsPerPage, selectedYear, or searchQuery changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage, selectedYear, searchQuery]);
+
+  // Update pagination calculations
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Update pagination handlers
+  const handlePreviousPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Previous clicked", currentPage);
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Next clicked", currentPage, totalPages);
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Update button visibility conditions
+  const showPreviousButton = currentPage > 1;
+  const showNextButton = currentPage < totalPages;
 
   // State untuk notifikasi error
   const [errorAlertVisible, setErrorAlertVisible] = useState(false);
@@ -316,7 +376,7 @@ export default function TableClient({
           </tr>
         </thead>
         <tbody>
-          {dataEkspedisi.map((item) => (
+          {paginatedData.map((item) => (
             <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
               <td className="px-6 py-4 font-medium">{item.no}</td>
               <td className="px-6 py-4">
@@ -364,6 +424,38 @@ export default function TableClient({
           ))}
         </tbody>
       </table>
+
+      {/* Footer Tabel (Info dan Paginasi) */}
+      <div className="p-4 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+        <span>
+          Menampilkan {paginatedData.length} dari {filteredData.length} entri
+        </span>
+        <div className="flex items-center gap-1 mt-2 md:mt-0">
+          {showPreviousButton && (
+            <button
+              type="button"
+              onClick={handlePreviousPage}
+              className="px-3 py-1 border rounded-md hover:bg-gray-100"
+            >
+              Sebelumnya
+            </button>
+          )}
+          {totalPages > 0 && (
+            <span className="px-3 py-1 border rounded-md bg-blue-600 text-white">
+              {currentPage}
+            </span>
+          )}
+          {showNextButton && (
+            <button
+              type="button"
+              onClick={handleNextPage}
+              className="px-3 py-1 border rounded-md hover:bg-gray-100"
+            >
+              Selanjutnya
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Kontainer Notifikasi (Kanan Bawah) */}
       <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm">
