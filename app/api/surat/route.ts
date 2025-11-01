@@ -60,11 +60,25 @@ export async function POST(req: Request) {
     });
 
     return Response.json({ ok: true, data: result });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating surat:", error);
+    
+    // Check if it's a Prisma unique constraint error on nomorSurat
+    if (
+      error?.code === "P2002" &&
+      (error?.meta?.target?.includes("nomorSurat") || 
+       String(error).includes("nomorSurat") ||
+       String(error).includes("Unique constraint failed on the fields: (`nomorSurat`"))
+    ) {
+      return Response.json({
+        ok: false,
+        error: "Nomor Surat tidak boleh sama dengan data yang sudah ada",
+      });
+    }
+    
     return Response.json({
       ok: false,
-      error: String(error),
+      error: "Terjadi kesalahan saat menyimpan data. Silakan coba lagi.",
     });
   }
 }

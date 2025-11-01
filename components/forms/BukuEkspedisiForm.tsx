@@ -339,7 +339,7 @@ export default function BukuEkspedisiForm({
       perihal: formData.isiSingkat,
       tujuan: formData.tujuan,
       keterangan: formData.keterangan || null,
-      userId: "ded21822-4303-47c9-8756-12b26419b009",
+      userId: "33ae9dd5-4023-4ee1-84b2-57644e8285e5",
     };
 
     const res = await fetch("/api/surat", {
