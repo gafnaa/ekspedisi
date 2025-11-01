@@ -186,10 +186,12 @@ export default function TableClient({
   dataEkspedisi,
   itemsPerPage,
   selectedYear,
+  searchQuery = "",
 }: {
   dataEkspedisi: Row[];
   itemsPerPage: number;
   selectedYear: string;
+  searchQuery?: string;
 }) {
   const fmt = (iso?: string | null) => {
     if (!iso) return "-";
@@ -201,21 +203,39 @@ export default function TableClient({
     });
   };
 
-  // Filter data based on selectedYear
-  const filteredData = selectedYear
-    ? dataEkspedisi.filter(
-        (item) =>
-          new Date(item.tglSurat).getFullYear().toString() === selectedYear
-      )
-    : dataEkspedisi;
+  // Filter data based on selectedYear and searchQuery
+  let filteredData = dataEkspedisi;
+
+  // Filter by year
+  if (selectedYear) {
+    filteredData = filteredData.filter(
+      (item) =>
+        new Date(item.tglSurat).getFullYear().toString() === selectedYear
+    );
+  }
+
+  // Filter by search query (search in multiple fields)
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase().trim();
+    filteredData = filteredData.filter((item) => {
+      return (
+        item.noSurat.toLowerCase().includes(query) ||
+        item.isiSingkat.toLowerCase().includes(query) ||
+        item.ditujukan.toLowerCase().includes(query) ||
+        item.keterangan.toLowerCase().includes(query) ||
+        fmt(item.tglSurat).toLowerCase().includes(query) ||
+        fmt(item.tglPengiriman).toLowerCase().includes(query)
+      );
+    });
+  }
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Reset current page when itemsPerPage or selectedYear changes
+  // Reset current page when itemsPerPage, selectedYear, or searchQuery changes
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [itemsPerPage, selectedYear]);
+  }, [itemsPerPage, selectedYear, searchQuery]);
 
   // Update pagination calculations
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);

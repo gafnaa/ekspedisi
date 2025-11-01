@@ -22,6 +22,7 @@ export default function BukuEkspedisiPage() {
   const [dataEkspedisi, setDataEkspedisi] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(10); // State for items per page
   const [selectedYear, setSelectedYear] = useState(""); // State for selected year
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
 
   useEffect(() => {
     async function fetchData() {
@@ -48,6 +49,10 @@ export default function BukuEkspedisiPage() {
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedYear(e.target.value);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
   return (
@@ -107,6 +112,8 @@ export default function BukuEkspedisiPage() {
             <input
               type="text"
               placeholder="kata kunci pencarian"
+              value={searchQuery}
+              onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             />
             <Search
@@ -118,10 +125,11 @@ export default function BukuEkspedisiPage() {
 
         {/* Tabel Data (Client Component for interactivity like Delete) */}
         <TableClient
-          key={`${itemsPerPage}-${selectedYear}`}
+          key={`${itemsPerPage}-${selectedYear}-${searchQuery}`}
           dataEkspedisi={dataEkspedisi}
           itemsPerPage={itemsPerPage}
           selectedYear={selectedYear}
+          searchQuery={searchQuery}
         />
       </div>
     </div>
