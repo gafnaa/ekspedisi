@@ -277,87 +277,72 @@ export default function BukuEkspedisiForm({
     }
   };
 
-  const formatDateForAPI = (dateStr: string) => {
-    try {
-      const [year, month, day] = dateStr.split("-").map(Number);
-      return new Date(year, month - 1, day).toISOString();
-    } catch {
-      return null;
-    }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setNotif(null);
 
-    // required fields check -> same as before
-    if (
-      !formData.nomorSurat ||
-      !formData.tanggalSurat ||
-      !formData.tujuan ||
-      !formData.isiSingkat ||
-      !formData.tanggalPengiriman
-    ) {
-      setNotif({
-        color: "danger",
-        title: "Gagal menyimpan",
-        description: "Tolong Lengkapi Data Secara Lengkap.",
-      });
-      return;
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setNotif(null);
 
-    const tanggalSurat = formatDateForAPI(formData.tanggalSurat);
-    const tanggalKirim = formatDateForAPI(formData.tanggalPengiriman);
-
-    if (!tanggalSurat || !tanggalKirim) {
-      setNotif({
-        color: "danger",
-        title: "Gagal menyimpan",
-        description: "Format tanggal tidak valid.",
-      });
-      return;
-    }
-
-    // This payload already matches what route.ts POST expects:
-    // nomorSurat, tanggalSurat, tanggalKirim, perihal, tujuan, keterangan, userId
-    // (no nomorUrut) :contentReference[oaicite:12]{index=12}
-    const payload = {
-      nomorSurat: formData.nomorSurat,
-      tanggalSurat,
-      tanggalKirim,
-      perihal: formData.isiSingkat,
-      tujuan: formData.tujuan,
-      keterangan: formData.keterangan || null,
-      userId: "0326d571-2e5f-4d3c-87f4-781461b238e2",
-    };
-
-    const res = await fetch("/api/surat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const json = await res.json();
-
-    if (!json.ok) {
-      setNotif({
-        color: "danger",
-        title: "Gagal menyimpan",
-        description: json.error || "Terjadi kesalahan pada server.",
-      });
-      return;
-    }
-
+  // Basic required fields (same validation idea as before)
+  if (
+    !formData.nomorSurat ||
+    !formData.tanggalSurat ||
+    !formData.tujuan ||
+    !formData.isiSingkat ||
+    !formData.tanggalPengiriman
+  ) {
     setNotif({
-      color: "success",
-      title: "Data berhasil disimpan!",
-      description: "Anda akan dialihkan kembali ke halaman utama.",
+      color: "danger",
+      title: "Gagal menyimpan",
+      description: "Tolong Lengkapi Data Secara Lengkap.",
     });
+    return;
+  }
 
-    setTimeout(() => {
-      router.push("/buku-ekspedisi");
-    }, 2000);
-  };
+  // Build multipart form data to send to /api/surat
+  const fd = new FormData();
+  fd.append("nomorSurat", formData.nomorSurat);
+  fd.append("tanggalSurat", formData.tanggalSurat); // "YYYY-MM-DD"
+  fd.append("tanggalPengiriman", formData.tanggalPengiriman); // "YYYY-MM-DD"
+  fd.append("perihal", formData.isiSingkat);
+  fd.append("tujuan", formData.tujuan);
+  fd.append("keterangan", formData.keterangan || "");
+  fd.append(
+    "userId",
+    "0326d571-2e5f-4d3c-87f4-781461b238e2" // keep or replace with real logged-in user
+  );
+
+  if (formData.berkas) {
+    fd.append("berkas", formData.berkas, formData.berkas.name);
+  }
+
+  const res = await fetch("/api/surat", {
+    method: "POST",
+    body: fd, // <-- NO manual Content-Type, browser will set boundary
+  });
+
+  const json = await res.json();
+
+  if (!json.ok) {
+    setNotif({
+      color: "danger",
+      title: "Gagal menyimpan",
+      description: json.error || "Terjadi kesalahan pada server.",
+    });
+    return;
+  }
+
+  setNotif({
+    color: "success",
+    title: "Data berhasil disimpan!",
+    description: "Anda akan dialihkan kembali ke halaman utama.",
+  });
+
+  setTimeout(() => {
+    router.push("/buku-ekspedisi");
+  }, 2000);
+};
+
   
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen text-black">

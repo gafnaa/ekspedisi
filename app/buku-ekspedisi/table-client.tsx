@@ -211,6 +211,7 @@ const handleConfirmDelete = async (id: string) => {
       description: "Tidak bisa terhubung ke server.",
     });
   }
+  router.refresh();
 };
 
 
