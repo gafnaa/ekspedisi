@@ -212,11 +212,13 @@ export default function TableClient({
   itemsPerPage,
   selectedYear,
   searchQuery = "",
+  userRole, // --- [MODIFICATION] Add userRole to props ---
 }: {
   dataEkspedisi: Row[];
   itemsPerPage: number;
   selectedYear: string;
   searchQuery?: string;
+  userRole: "admin" | "staf"; // --- [MODIFICATION] Define the prop type ---
 }) {
   // helper to format dates
   const fmt = (iso?: string | null) => {
@@ -230,7 +232,7 @@ export default function TableClient({
   };
 
   /* 1. FILTER DATA */
-  let filteredData = dataEkspedisi;
+  let filteredData = dataEkspedisi || [];
 
   if (selectedYear) {
     filteredData = filteredData.filter(
@@ -435,15 +437,18 @@ export default function TableClient({
                     <Pencil size={16} />
                   </a>
 
-                  {/* Delete */}
-                  <button
-                    type="button"
-                    title="Hapus Data"
-                    onClick={() => handleOpenConfirmModal(item.id)}
-                    className="p-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {/* --- [MODIFICATION] Conditional Delete Button --- */}
+                  {userRole === "admin" && (
+                    <button
+                      type="button"
+                      title="Hapus Data"
+                      onClick={() => handleOpenConfirmModal(item.id)}
+                      className="p-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                  {/* --- End of Modification --- */}
 
                   {/* Extras (your placeholders) */}
                   <button

@@ -2,11 +2,12 @@
 "use client"; // Add use client directive
 
 import TableClient from "@/app/buku-ekspedisi/table-client";
-import { Download, Plus, Printer, Search } from "lucide-react";
+import { Download, Plus, Printer, Search, LogOut } from "lucide-react"; // Import LogOut
 import Link from "next/link";
 import { useState, useEffect } from "react"; // Import useState and useEffect
+import { useRouter } from "next/navigation"; // Import useRouter
 
-export const dynamic = "force-dynamic"; // or use revalidate if you prefer ISR
+export const dynamic = "force-dynamic";
 
 async function getData() {
   const res = await fetch("http://localhost:3000/api/surat", {
@@ -18,28 +19,41 @@ async function getData() {
 }
 
 export default function BukuEkspedisiPage() {
-  // Change to client component
   const [dataEkspedisi, setDataEkspedisi] = useState([]);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // State for items per page
-  const [selectedYear, setSelectedYear] = useState(""); // State for selected year
-  const [searchQuery, setSearchQuery] = useState(""); // State for search query
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedYear, setSelectedYear] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // --- New state for role ---
+  const [userRole, setUserRole] = useState<"admin" | "staf" | null>(null);
+  const router = useRouter(); // Initialize router
 
   useEffect(() => {
+    // --- Check for user role in localStorage ---
+    const role = localStorage.getItem("userRole") as "admin" | "staf" | null;
+    if (!role) {
+      // If no role, redirect to login
+      router.push("/login");
+    } else {
+      setUserRole(role);
+    }
+    // --- End of role check ---
+
     async function fetchData() {
       const data = await getData();
-      setDataEkspedisi(data);
+      setDataEkspedisi(data || []);
     }
     fetchData();
-  }, []);
+  }, [router]);
 
   // Extract distinct years from dataEkspedisi
   const distinctYears = Array.from(
     new Set(
-      dataEkspedisi
+      (dataEkspedisi || [])
         .map((item: any) => new Date(item.tglSurat).getFullYear())
-        .filter((year) => !isNaN(year)) // Filter out invalid years
+        .filter((year) => !isNaN(year))
     )
-  ).sort((a, b) => b - a); // Sort in descending order
+  ).sort((a, b) => b - a);
 
   const handleItemsPerPageChange = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -55,11 +69,35 @@ export default function BukuEkspedisiPage() {
     setSearchQuery(e.target.value);
   };
 
+  // --- New Logout Handler ---
+  const handleLogout = () => {
+    localStorage.removeItem("userRole");
+    router.push("/login");
+  };
+
+  // Don't render anything until role is confirmed
+  if (!userRole) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-black">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-4">
-        Buku Ekspedisi
-      </h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-semibold text-gray-800">
+          Buku Ekspedisi
+        </h1>
+        <button
+          onClick={handleLogout}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors"
+        >
+          <LogOut size={18} />
+          Logout
+        </button>
+      </div>
 
       {/* Area Tombol Aksi Atas */}
       <div className="flex flex-col md:flex-row gap-2 mb-4">
@@ -130,6 +168,7 @@ export default function BukuEkspedisiPage() {
           itemsPerPage={itemsPerPage}
           selectedYear={selectedYear}
           searchQuery={searchQuery}
+          userRole={userRole} // --- Pass the role down ---
         />
       </div>
     </div>
