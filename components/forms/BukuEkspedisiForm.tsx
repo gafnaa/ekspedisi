@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 
 // Tentukan tipe data untuk form
 interface FormData {
+  id?: string;
   nomorUrut: string;
   kodeSurat: string;
   nomorSurat: string;
@@ -28,7 +29,10 @@ interface FormData {
 
 // Tipe untuk props, kita terima dataAwal opsional
 interface BukuEkspedisiFormProps {
-  dataAwal?: Partial<FormData>; // Partial berarti semua properti opsional
+  dataAwal?: Partial<FormData> & {
+    perihal?: string;
+    tanggalKirim?: string;
+  }; // 🔧 PERBAIKAN: Tambahkan field dari database
   isEditMode: boolean;
 }
 
@@ -53,20 +57,26 @@ export default function BukuEkspedisiForm({
   });
 
   // useEffect ini akan mengisi form jika kita dalam mode Edit
+  // useEffect ini akan mengisi form jika kita dalam mode Edit
   useEffect(() => {
     if (isEditMode && dataAwal) {
-      // Mengisi state dengan data awal
-      setFormData((prev) => ({
-        ...prev,
-        ...dataAwal,
-        // Pastikan format tanggal sesuai untuk input type="date" (YYYY-MM-DD)
-        tanggalSurat: dataAwal.tanggalSurat
+      // 🔧 PERBAIKAN: Pastikan mapping field yang benar
+      setFormData({
+        nomorUrut: dataAwal.nomorUrut?.toString() || '',
+        kodeSurat: dataAwal.kodeSurat || '',
+        nomorSurat: dataAwal.nomorSurat || '',
+        // 🔧 PERBAIKAN: Format tanggal untuk input type="date"
+        tanggalSurat: dataAwal.tanggalSurat 
           ? new Date(dataAwal.tanggalSurat).toISOString().split('T')[0]
           : '',
-        tanggalPengiriman: dataAwal.tanggalPengiriman
-          ? new Date(dataAwal.tanggalPengiriman).toISOString().split('T')[0]
+        tujuan: dataAwal.tujuan || '',
+        isiSingkat: dataAwal.isiSingkat || dataAwal.perihal || '', // 🔧 PERBAIKAN: handle perihal
+        tanggalPengiriman: dataAwal.tanggalPengiriman || dataAwal.tanggalKirim
+          ? new Date(dataAwal.tanggalPengiriman || dataAwal.tanggalKirim!).toISOString().split('T')[0]
           : '',
-      }));
+        berkas: null, // Tetap null untuk file
+        keterangan: dataAwal.keterangan || '',
+      });
     }
   }, [isEditMode, dataAwal]);
 
@@ -101,35 +111,50 @@ export default function BukuEkspedisiForm({
 
   // Handler saat form disubmit
   // <-- PERBAIKAN: Menambahkan router.push()
+// Handler saat form disubmit - PERBAIKAN LENGKAP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 🔧 PERBAIKAN: Pastikan payload sesuai dengan schema database
     const payload = {
-      nomorUrut: Number(formData.nomorUrut) || undefined,
+      nomorUrut: Number(formData.nomorUrut) || 0, // Ubah dari undefined ke 0
       nomorSurat: formData.nomorSurat,
       tanggalSurat: formData.tanggalSurat,
-      tanggalKirim: formData.tanggalPengiriman,
+      tanggalKirim: formData.tanggalPengiriman, // 🔧 PERBAIKAN: sesuaikan nama field
       perihal: formData.isiSingkat,
       tujuan: formData.tujuan,
-      keterangan: formData.keterangan || null,
-      userId: "03b71cb8-885a-4e1d-830e-922058d3aae7", // TODO: nanti pakai auth beneran
+      keterangan: formData.keterangan || "",
+      userId: "3fbf1d65-6321-4b94-b122-87a9ac2c34ef",
     };
 
-    const res = await fetch("/api/surat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    // 🔧 PERBAIKAN: Gunakan id dari dataAwal untuk edit mode
+    const url = isEditMode
+      ? `/api/surat/${dataAwal?.id}`
+      : "/api/surat";
 
-    const json = await res.json();
+    const method = isEditMode ? "PUT" : "POST";
 
-    if (!json.ok) {
-      alert("Gagal menyimpan: " + json.error);
-      return;
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      const json = await res.json();
+
+      if (!json.ok) {
+        alert(isEditMode ? "Gagal mengubah data: " + json.error : "Gagal menyimpan: " + json.error);
+        return;
+      }
+
+      alert(isEditMode ? "Data berhasil diperbarui!" : "Data berhasil disimpan!");
+      router.push("/buku-ekspedisi");
+      router.refresh(); // 🔧 PERBAIKAN: Refresh untuk update data terbaru
+    } catch (error) {
+      console.error("Submit error:", error);
+      alert("Terjadi kesalahan saat menyimpan data");
     }
-
-    alert("Data berhasil disimpan!");
-    router.push("/buku-ekspedisi");
   };
 
 

@@ -5,14 +5,14 @@ import React, { useState } from "react";
 // import { useRouter } from "next/navigation"; // Dihapus - diganti dengan window.location.reload
 // import { Alert, Modal, Button } from "@heroui/react"; // Dihapus - dibuat ulang di bawah
 import {
-  ArrowUpDown,
+  AlertTriangle,
+  ArrowUpDown, // Ditambahkan untuk ikon modal
+  CheckCircle,
+  Download,
+  DownloadCloud,
   Pencil,
   Trash2,
-  DownloadCloud,
-  Download,
   X,
-  AlertTriangle, // Ditambahkan untuk ikon modal
-  CheckCircle, // Ditambahkan untuk notifikasi sukses
 } from "lucide-react";
 
 // === KOMPONEN UI DIBUAT ULANG ===
@@ -323,7 +323,7 @@ export default function TableClient({
                 <div className="flex gap-2">
                   {/* Ubah - Menggunakan <a> standar */}
                   <a
-                    href={`/buku-ekspedisi/form/${item.id}`}
+                    href={`/buku-ekspedisi/${item.id}`}
                     title="Ubah Data"
                     className="p-2 bg-yellow-400 text-white rounded-md shadow hover:bg-yellow-500 transition-colors"
                   >
