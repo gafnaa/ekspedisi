@@ -187,11 +187,13 @@ export default function TableClient({
   itemsPerPage,
   selectedYear,
   searchQuery = "",
+  userRole, // --- [MODIFICATION] Add userRole to props ---
 }: {
   dataEkspedisi: Row[];
   itemsPerPage: number;
   selectedYear: string;
   searchQuery?: string;
+  userRole: "admin" | "staf"; // --- [MODIFICATION] Define the prop type ---
 }) {
   const fmt = (iso?: string | null) => {
     if (!iso) return "-";
@@ -390,14 +392,18 @@ export default function TableClient({
                     <Pencil size={16} />
                   </a>
 
-                  {/* Hapus (soft delete) */}
-                  <button
-                    title="Hapus Data"
-                    onClick={() => handleOpenConfirmModal(item.id)} // Diubah untuk memanggil modal
-                    className="p-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition-colors" // Warna diubah menjadi merah
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {/* --- [MODIFICATION] Conditional Delete Button --- */}
+                  {userRole === "admin" && (
+                    <button
+                      title="Hapus Data"
+                      onClick={() => handleOpenConfirmModal(item.id)} // Diubah untuk memanggil modal
+                      className="p-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition-colors" // Warna diubah menjadi merah
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                  {/* --- End of Modification --- */}
+
 
                   {/* Contoh tombol tambahan */}
                   <button
