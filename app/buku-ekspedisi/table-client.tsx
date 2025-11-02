@@ -99,40 +99,13 @@ export default function TableClient({
   const showPreviousButton = currentPage > 1;
   const showNextButton = currentPage < totalPages;
 
-  // notification + modal state stays the same...
-  const [errorAlertVisible, setErrorAlertVisible] = useState(false);
-  const [successAlertVisible, setSuccessAlertVisible] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
 
-  const handleOpenConfirmModal = (id: string) => {
-    setItemToDeleteId(id);
-    setIsConfirmModalOpen(true);
-  };
 
-  const handleCancelDelete = () => {
-    setIsConfirmModalOpen(false);
-    setItemToDeleteId(null);
-  };
+  const handleConfirmDelete = async (id: string) => {
 
-  const handleConfirmDelete = async () => {
-    if (!itemToDeleteId) return;
-
-    const res = await fetch(`/api/surat/${itemToDeleteId}`, {
+    const res = await fetch(`/api/surat/${id}`, {
       method: "DELETE",
     });
-
-    if (!res.ok) {
-      setErrorAlertVisible(true);
-    } else {
-      setSuccessAlertVisible(true);
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    }
-
-    setIsConfirmModalOpen(false);
-    setItemToDeleteId(null);
   };
 
   return (
@@ -199,7 +172,7 @@ export default function TableClient({
 
                   <button
                     title="Hapus Data"
-                    onClick={() => handleOpenConfirmModal(item.id)}
+                    onClick={() => handleConfirmDelete(item.id)}
                     className="p-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition-colors"
                   >
                     <Trash2 size={16} />
