@@ -188,20 +188,18 @@ function DatePickerComponent({
 
 // Modify the FormData interface to make nomorUrut optional
 interface FormData {
-  nomorUrut?: string; // Make it optional
   kodeSurat: string;
   nomorSurat: string;
-  tanggalSurat: string; // Tetap YYYY-MM-DD
+  tanggalSurat: string;         // YYYY-MM-DD (string in state)
   tujuan: string;
   isiSingkat: string;
-  tanggalPengiriman: string; // Tetap YYYY-MM-DD
+  tanggalPengiriman: string;    // YYYY-MM-DD (string in state)
   berkas: File | null;
   keterangan: string;
 }
 
-// Tipe untuk props, kita terima dataAwal opsional
 interface BukuEkspedisiFormProps {
-  dataAwal?: Partial<FormData>; // Partial berarti semua properti opsional
+  dataAwal?: Partial<FormData>;
   isEditMode: boolean;
 }
 
@@ -209,15 +207,12 @@ export default function BukuEkspedisiForm({
   dataAwal,
   isEditMode,
 }: BukuEkspedisiFormProps) {
-  // const router = useRouter(); // Dikembalikan -> DIKOMENTARI SEMENTARA
-  // Pengganti sementara untuk router agar lolos kompilasi
   const router = useRouter();
 
-  // State untuk menampung data form
+  // initial form state, WITHOUT nomorUrut
   const [formData, setFormData] = useState<FormData>(() => {
     if (isEditMode && dataAwal) {
       return {
-        nomorUrut: dataAwal.nomorUrut || "",
         kodeSurat: dataAwal.kodeSurat || "",
         nomorSurat: dataAwal.nomorSurat || "",
         tanggalSurat: dataAwal.tanggalSurat || "",
@@ -229,7 +224,6 @@ export default function BukuEkspedisiForm({
       };
     }
     return {
-      nomorUrut: "",
       kodeSurat: "",
       nomorSurat: "",
       tanggalSurat: "",
@@ -241,19 +235,16 @@ export default function BukuEkspedisiForm({
     };
   });
 
-  // State untuk notifikasi (menggantikan alert)
   const [notif, setNotif] = useState<{
     color: "success" | "danger";
     title: string;
     description: string;
   } | null>(null);
-  // useEffect for dataAwal is removed as state is initialized directly
 
-  // Handler untuk mengubah state saat input diisi
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -262,10 +253,9 @@ export default function BukuEkspedisiForm({
     }));
   };
 
-  // Handler khusus untuk DatePicker
   const handleDateSelect = (
     name: "tanggalSurat" | "tanggalPengiriman",
-    date: string
+    date: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -273,7 +263,6 @@ export default function BukuEkspedisiForm({
     }));
   };
 
-  // Handler untuk input file
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFormData((prev) => ({
@@ -288,88 +277,73 @@ export default function BukuEkspedisiForm({
     }
   };
 
-  // Add this utility function near the top with other utility functions
-  const formatDateForAPI = (dateStr: string) => {
-    try {
-      const [year, month, day] = dateStr.split("-").map(Number);
-      return new Date(year, month - 1, day).toISOString();
-    } catch (e) {
-      return null;
-    }
-  };
 
-  // Handler saat form disubmit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setNotif(null);
 
-    // Validation remains the same
-    if (
-      !formData.nomorSurat ||
-      !formData.tanggalSurat ||
-      !formData.tujuan ||
-      !formData.isiSingkat ||
-      !formData.tanggalPengiriman
-    ) {
-      setNotif({
-        color: "danger",
-        title: "Gagal menyimpan",
-        description: "Tolong Lengkapi Data Secara Lengkap.",
-      });
-      return;
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setNotif(null);
 
-    // Format dates for API
-    const tanggalSurat = formatDateForAPI(formData.tanggalSurat);
-    const tanggalKirim = formatDateForAPI(formData.tanggalPengiriman);
-
-    if (!tanggalSurat || !tanggalKirim) {
-      setNotif({
-        color: "danger",
-        title: "Gagal menyimpan",
-        description: "Format tanggal tidak valid.",
-      });
-      return;
-    }
-
-    const payload = {
-      nomorSurat: formData.nomorSurat,
-      tanggalSurat,
-      tanggalKirim,
-      perihal: formData.isiSingkat,
-      tujuan: formData.tujuan,
-      keterangan: formData.keterangan || null,
-      userId: "33ae9dd5-4023-4ee1-84b2-57644e8285e5",
-    };
-
-    const res = await fetch("/api/surat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const json = await res.json();
-
-    if (!json.ok) {
-      setNotif({
-        color: "danger",
-        title: "Gagal menyimpan",
-        description: json.error || "Terjadi kesalahan pada server.",
-      });
-      return;
-    }
-
+  // Basic required fields (same validation idea as before)
+  if (
+    !formData.nomorSurat ||
+    !formData.tanggalSurat ||
+    !formData.tujuan ||
+    !formData.isiSingkat ||
+    !formData.tanggalPengiriman
+  ) {
     setNotif({
-      color: "success",
-      title: "Data berhasil disimpan!",
-      description: "Anda akan dialihkan kembali ke halaman utama.",
+      color: "danger",
+      title: "Gagal menyimpan",
+      description: "Tolong Lengkapi Data Secara Lengkap.",
     });
+    return;
+  }
 
-    setTimeout(() => {
-      router.push("/buku-ekspedisi"); // Dikembalikan -> Menggunakan router pengganti
-    }, 2000);
-  };
+  // Build multipart form data to send to /api/surat
+  const fd = new FormData();
+  fd.append("nomorSurat", formData.nomorSurat);
+  fd.append("tanggalSurat", formData.tanggalSurat); // "YYYY-MM-DD"
+  fd.append("tanggalPengiriman", formData.tanggalPengiriman); // "YYYY-MM-DD"
+  fd.append("perihal", formData.isiSingkat);
+  fd.append("tujuan", formData.tujuan);
+  fd.append("keterangan", formData.keterangan || "");
+  fd.append(
+    "userId",
+    "0326d571-2e5f-4d3c-87f4-781461b238e2" // keep or replace with real logged-in user
+  );
 
+  if (formData.berkas) {
+    fd.append("berkas", formData.berkas, formData.berkas.name);
+  }
+
+  const res = await fetch("/api/surat", {
+    method: "POST",
+    body: fd, // <-- NO manual Content-Type, browser will set boundary
+  });
+
+  const json = await res.json();
+
+  if (!json.ok) {
+    setNotif({
+      color: "danger",
+      title: "Gagal menyimpan",
+      description: json.error || "Terjadi kesalahan pada server.",
+    });
+    return;
+  }
+
+  setNotif({
+    color: "success",
+    title: "Data berhasil disimpan!",
+    description: "Anda akan dialihkan kembali ke halaman utama.",
+  });
+
+  setTimeout(() => {
+    router.push("/buku-ekspedisi");
+  }, 2000);
+};
+
+  
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen text-black">
       {/* Kontainer Notifikasi (Tengah Atas) */}
