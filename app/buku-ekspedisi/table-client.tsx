@@ -550,7 +550,7 @@ export default function TableClient({
       </div>
 
       {/* TOASTS */}
-      <div className="fixed bottom-4 right-4 z-[200] w-full max-w-sm">
+      <div className="overflow-x-auto p-4 font-sans pb-32">
         <AlertToast
           color="danger"
           title="Gagal menghapus data"
