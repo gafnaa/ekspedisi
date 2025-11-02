@@ -41,7 +41,7 @@ export default function BukuEkspedisiPage() {
 
     async function fetchData() {
       const data = await getData();
-      setDataEkspedisi(data);
+      setDataEkspedisi(data || []);
     }
     fetchData();
   }, [router]);
@@ -49,7 +49,7 @@ export default function BukuEkspedisiPage() {
   // Extract distinct years from dataEkspedisi
   const distinctYears = Array.from(
     new Set(
-      dataEkspedisi
+      (dataEkspedisi || [])
         .map((item: any) => new Date(item.tglSurat).getFullYear())
         .filter((year) => !isNaN(year))
     )

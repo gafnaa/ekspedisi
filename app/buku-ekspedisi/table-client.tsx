@@ -232,7 +232,7 @@ export default function TableClient({
   };
 
   /* 1. FILTER DATA */
-  let filteredData = dataEkspedisi;
+  let filteredData = dataEkspedisi || [];
 
   if (selectedYear) {
     filteredData = filteredData.filter(
