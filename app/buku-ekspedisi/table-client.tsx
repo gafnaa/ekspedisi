@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowUpDown,
   Pencil,
@@ -26,6 +27,68 @@ type Row = {
   keterangan: string;
 };
 
+const Alert = ({
+  isVisible,
+  onClose,
+  title,
+  description,
+  color = "danger",
+}: {
+  isVisible: boolean;
+  onClose: () => void;
+  title: string;
+  description?: string;
+  color: "danger" | "success";
+}) => {
+  const colorClasses = {
+    danger: {
+      bg: "bg-red-50",
+      border: "border-red-400",
+      text: "text-red-700",
+      icon: "text-red-600",
+    },
+    success: {
+      bg: "bg-green-50",
+      border: "border-green-400",
+      text: "text-green-700",
+      icon: "text-green-600",
+    },
+  };
+
+  const icons = {
+    danger: <AlertTriangle size={20} className={colorClasses.danger.icon} />,
+    success: <CheckCircle size={20} className={colorClasses.success.icon} />,
+  };
+
+  const selectedColor = colorClasses[color];
+
+  return (
+    <div
+      className={`border ${selectedColor.bg} ${selectedColor.border} ${
+        selectedColor.text
+      } rounded-md p-4 mb-4 relative flex gap-3 items-start transition-all duration-300 ease-in-out w-full shadow-lg ${
+        isVisible
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 -translate-y-4 pointer-events-none"
+      }`}
+      role="alert"
+    >
+      <div className="flex-shrink-0 pt-0.5">{icons[color]}</div>
+      <div className="flex-grow">
+        <strong className="font-bold">{title}</strong>
+        {description && <p className="text-sm mt-1">{description}</p>}
+      </div>
+      <button
+        onClick={onClose}
+        className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-black/10 transition-colors"
+      >
+        <X size={18} />
+      </button>
+    </div>
+  );
+};
+
+
 export default function TableClient({
   dataEkspedisi,
   itemsPerPage,
@@ -46,6 +109,15 @@ export default function TableClient({
       year: "numeric",
     });
   };
+
+  const router = useRouter();
+
+  const [notif, setNotif] = useState<{
+    color: "success" | "danger";
+    title: string;
+    description: string;
+  } | null>(null);
+
 
   // === FILTERING (same as before) ===
   let filteredData = dataEkspedisi;
@@ -101,15 +173,58 @@ export default function TableClient({
 
 
 
-  const handleConfirmDelete = async (id: string) => {
+const handleConfirmDelete = async (id: string) => {
+  // reset notif first
+  setNotif(null);
 
+  try {
     const res = await fetch(`/api/surat/${id}`, {
       method: "DELETE",
     });
-  };
+
+    const json = await res.json();
+
+    if (!json.ok) {
+      setNotif({
+        color: "danger",
+        title: "Gagal menghapus",
+        description: json.error || "Terjadi kesalahan pada server.",
+      });
+      return;
+    }
+
+    // success
+    setNotif({
+      color: "success",
+      title: "Data berhasil dihapus!",
+      description: "Data akan diperbarui.",
+    });
+
+    // after a short delay, refresh the page data
+    setTimeout(() => {
+      router.refresh?.(); // Next.js app router revalidate this page
+    }, 2000);
+  } catch (err) {
+    setNotif({
+      color: "danger",
+      title: "Gagal menghapus",
+      description: "Tidak bisa terhubung ke server.",
+    });
+  }
+};
+
 
   return (
     <div className="overflow-x-auto p-4 font-sans">
+      <div className="fixed top-4 sm:top-16 left-1/2 -translate-x-1/2 z-50 w-11/12 sm:w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
+        <Alert
+          isVisible={!!notif}
+          color={notif?.color || "success"}
+          title={notif?.title || ""}
+          description={notif?.description || ""}
+          onClose={() => setNotif(null)}
+        />
+      </div>
       {/* ...Modal stays the same... */}
 
       <table className="w-full text-sm text-left text-gray-700">
