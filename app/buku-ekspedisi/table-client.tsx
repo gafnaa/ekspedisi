@@ -289,6 +289,7 @@ export default function TableClient({
   const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
 
   const handleOpenConfirmModal = (id: string) => {
+
     setItemToDeleteId(id);
     setIsConfirmModalOpen(true);
   };
@@ -330,7 +331,6 @@ export default function TableClient({
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const openImagePreview = (url: string) => {
-
     setPreviewImageUrl(url);
     setIsImagePreviewOpen(true);
   };
@@ -475,33 +475,18 @@ export default function TableClient({
               <td className="px-6 py-4">
                 {item.signDirectory ? (
                   <button
+                    type="button"
+                    className="relative group"
                     onClick={() => openImagePreview(item.signDirectory!)}
                     title="Klik untuk perbesar"
-                    className="
-                      relative
-                      h-12 w-12
-                      flex items-center justify-center
-                      rounded
-                      ring-1 ring-gray-300
-                      overflow-hidden
-                      group
-                      hover:ring-blue-500
-                      transition
-                    "
                   >
                     <img
                       src={item.signDirectory}
                       alt="Tanda tangan / bukti"
-                      className="h-full w-full object-cover pointer-events-none"
+                      className="h-12 w-12 object-cover rounded ring-1 ring-gray-300 group-hover:ring-blue-500 transition"
                     />
-                    <div className="
-                      absolute inset-0
-                      bg-black/40
-                      opacity-0 group-hover:opacity-100
-                      text-white text-[10px] font-medium
-                      flex items-center justify-center
-                      transition
-                    ">
+                    {/* hover overlay icon */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 text-white flex items-center justify-center text-[10px] font-medium rounded transition">
                       <ZoomIn size={16} />
                     </div>
                   </button>
@@ -509,7 +494,6 @@ export default function TableClient({
                   <span className="text-gray-400 italic">-</span>
                 )}
               </td>
-
             </tr>
           ))}
         </tbody>
@@ -550,7 +534,7 @@ export default function TableClient({
       </div>
 
       {/* TOASTS */}
-      <div className="overflow-x-auto p-4 font-sans pb-32">
+      <div className="fixed top-4 right-4 z-[200] w-full max-w-sm">
         <AlertToast
           color="danger"
           title="Gagal menghapus data"
