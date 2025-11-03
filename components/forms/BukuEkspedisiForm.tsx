@@ -188,6 +188,8 @@ function DatePickerComponent({
 
 // Modify the FormData interface to make nomorUrut optional
 interface FormData {
+  id?: string;
+  nomorUrut?: string;
   kodeSurat: string;
   nomorSurat: string;
   tanggalSurat: string;         // YYYY-MM-DD (string in state)
@@ -199,7 +201,10 @@ interface FormData {
 }
 
 interface BukuEkspedisiFormProps {
-  dataAwal?: Partial<FormData>;
+  dataAwal?: Partial<FormData> & {
+    perihal?: string;
+    tanggalKirim?: string;
+  };
   isEditMode: boolean;
 }
 
@@ -234,6 +239,30 @@ export default function BukuEkspedisiForm({
       keterangan: "",
     };
   });
+
+  // useEffect ini akan mengisi form jika kita dalam mode Edit
+  // useEffect ini akan mengisi form jika kita dalam mode Edit
+  useEffect(() => {
+    if (isEditMode && dataAwal) {
+      // 🔧 PERBAIKAN: Pastikan mapping field yang benar
+      setFormData({
+        nomorUrut: dataAwal.nomorUrut?.toString() || '',
+        kodeSurat: dataAwal.kodeSurat || '',
+        nomorSurat: dataAwal.nomorSurat || '',
+        // 🔧 PERBAIKAN: Format tanggal untuk input type="date"
+        tanggalSurat: dataAwal.tanggalSurat 
+          ? new Date(dataAwal.tanggalSurat).toISOString().split('T')[0]
+          : '',
+        tujuan: dataAwal.tujuan || '',
+        isiSingkat: dataAwal.isiSingkat || dataAwal.perihal || '', // 🔧 PERBAIKAN: handle perihal
+        tanggalPengiriman: (dataAwal.tanggalPengiriman || dataAwal.tanggalKirim)
+          ? new Date((dataAwal.tanggalPengiriman || dataAwal.tanggalKirim) as string).toISOString().split('T')[0]
+          : '',
+        berkas: null, // Tetap null untuk file
+        keterangan: dataAwal.keterangan || '',
+      });
+    }
+  }, [isEditMode, dataAwal]);
 
   const [notif, setNotif] = useState<{
     color: "success" | "danger";
@@ -277,8 +306,6 @@ export default function BukuEkspedisiForm({
     }
   };
 
-
-
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setNotif(null);
@@ -309,7 +336,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   fd.append("keterangan", formData.keterangan || "");
   fd.append(
     "userId",
-    "0326d571-2e5f-4d3c-87f4-781461b238e2" // keep or replace with real logged-in user
+    "0326d571-2e5f-4d3c-87f4-781461b238e2"
   );
 
   if (formData.berkas) {
@@ -318,7 +345,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   const res = await fetch("/api/surat", {
     method: "POST",
-    body: fd, // <-- NO manual Content-Type, browser will set boundary
+    body: fd,
   });
 
   const json = await res.json();

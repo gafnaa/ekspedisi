@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  ArrowUpDown,
+  AlertTriangle,
+  ArrowUpDown, // Ditambahkan untuk ikon modal
+  CheckCircle,
+  Download,
+  DownloadCloud,
   Pencil,
   Trash2,
-  DownloadCloud,
-  Download,
   X,
-  AlertTriangle,
-  CheckCircle,
   ZoomIn,
 } from "lucide-react";
 
@@ -430,7 +430,7 @@ export default function TableClient({
                 <div className="flex gap-2">
                   {/* Edit */}
                   <a
-                    href={`/buku-ekspedisi/form/${item.id}`}
+                    href={`/buku-ekspedisi/${item.id}`}
                     title="Ubah Data"
                     className="p-2 bg-yellow-400 text-white rounded-md shadow hover:bg-yellow-500 transition-colors"
                   >
@@ -454,6 +454,7 @@ export default function TableClient({
                   <button
                     type="button"
                     title="Download"
+                    onClick={() => window.open(`/api/surat/${item.id}/download`, "_blank")}
                     className="p-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
                   >
                     <DownloadCloud size={16} />

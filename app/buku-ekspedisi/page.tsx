@@ -111,10 +111,13 @@ export default function BukuEkspedisiPage() {
           <Printer size={18} />
           Cetak
         </button>
-        <button className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg shadow hover:bg-slate-800 transition-colors w-full md:w-auto">
-          <Download size={18} />
-          Unduh
-        </button>
+
+        <Link href="/api/surat/download-all" target="_blank">
+          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg shadow hover:bg-slate-800 transition-colors w-full md:w-auto">
+            <Download size={18} />
+            Unduh
+          </button>
+        </Link>
       </div>
 
       {/* Card untuk filter dan tabel */}
