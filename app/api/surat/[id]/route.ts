@@ -85,7 +85,6 @@ export async function PUT(
     const updated = await prisma.suratKeluar.update({
       where: { id },
       data: {
-        nomorUrut: body.nomorUrut,
         nomorSurat: body.nomorSurat,
         tanggalSurat: toDate(body.tanggalSurat), // ✅ Sekarang compatible
         tanggalKirim: toDate(body.tanggalPengiriman), // ✅ Sesuaikan dengan field dari frontend
@@ -102,4 +101,4 @@ export async function PUT(
     return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
   }
 }
-}
+
