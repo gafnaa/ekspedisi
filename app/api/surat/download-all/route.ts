@@ -59,7 +59,7 @@ export async function GET() {
     // Data surat
     suratList.forEach((surat, index) => {
       allRows.push([
-        surat.nomorUrut?.toString() || (index + 1).toString(),
+        (index + 1).toString(),
         surat.tanggalKirim ? formatTanggal(surat.tanggalKirim) : "",
         `${surat.tanggalSurat ? formatTanggal(surat.tanggalSurat) : ""}${surat.nomorSurat ? " / " + surat.nomorSurat : ""}`,
         surat.perihal || "",
