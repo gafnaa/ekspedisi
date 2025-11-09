@@ -13,6 +13,7 @@ CREATE TABLE "User" (
     "username" TEXT NOT NULL,
     "namaLengkap" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'STAF',
+    "passwordHash" TEXT NOT NULL,
     "tandaTangan" BYTEA,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -22,13 +23,13 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "SuratKeluar" (
     "id" TEXT NOT NULL,
-    "nomorUrut" SERIAL NOT NULL,
     "tanggalKirim" TIMESTAMP(3) NOT NULL,
     "nomorSurat" TEXT NOT NULL,
     "tanggalSurat" TIMESTAMP(3) NOT NULL,
     "perihal" TEXT NOT NULL,
     "tujuan" TEXT NOT NULL,
     "keterangan" TEXT,
+    "signDirectory" TEXT,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -59,9 +60,6 @@ CREATE INDEX "User_role_idx" ON "User"("role");
 
 -- CreateIndex
 CREATE INDEX "User_username_idx" ON "User"("username");
-
--- CreateIndex
-CREATE UNIQUE INDEX "SuratKeluar_nomorUrut_key" ON "SuratKeluar"("nomorUrut");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SuratKeluar_nomorSurat_key" ON "SuratKeluar"("nomorSurat");

@@ -1,148 +1,62 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
-export async function GET() {
+export async function GET(
+  req: Request,
+  ctx: { params: Promise<{ id: string }> } // <-- params is a Promise here
+) {
   try {
-    // Ambil semua data surat keluar
-    const suratList = await prisma.suratKeluar.findMany({
-      orderBy: { nomorUrut: "asc" },
+    const { id } = await ctx.params;       // <-- unwrap it
+
+    if (!id) {
+      return NextResponse.json(
+        { ok: false, error: "Missing id" },
+        { status: 400 }
+      );
+    }
+
+    // 1) Find the record and get the blob URL
+    const surat = await prisma.suratKeluar.findUnique({
+      where: { id },
+      select: { id: true, nomorSurat: true, signDirectory: true },
     });
 
-    // Jika tidak ada data, return error yang lebih informatif
-    if (!suratList || suratList.length === 0) {
+    if (!surat || !surat.signDirectory) {
       return NextResponse.json(
-        { 
-          ok: false, 
-          error: "Tidak ada data surat keluar yang tersedia untuk diekspor" 
-        }, 
+        { ok: false, error: "File tidak ditemukan" },
         { status: 404 }
       );
     }
 
-    // Buat PDF document
-    const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-    // Ukuran halaman A4 portrait
-    const pageWidth = 595;  // A4 width in points
-    const pageHeight = 842; // A4 height in points
-    
-    let page = pdfDoc.addPage([pageWidth, pageHeight]);
-    let currentY = pageHeight - 50; // Start from top
-
-    // Judul
-    page.drawText("BUKU EKSPEDISI SURAT KELUAR", {
-      x: 50,
-      y: currentY,
-      size: 16,
-      font: fontBold,
-      color: rgb(0, 0, 0),
-    });
-
-    currentY -= 30;
-
-    page.drawText(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')} - Total: ${suratList.length} data`, {
-      x: 50,
-      y: currentY,
-      size: 10,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
-
-    currentY -= 40;
-
-    // Header tabel
-    const headers = [
-      "NO",
-      "TANGGAL KIRIM",
-      "TANGGAL & NOMOR SURAT", 
-      "ISI SINGKAT",
-      "TUJUAN",
-      "KETERANGAN"
-    ];
-
-    const colWidths = [30, 70, 120, 150, 100, 80];
-    const rowHeight = 20;
-
-    // Fungsi untuk menggambar baris
-    const drawTableRow = (y: number, cells: string[], isHeader: boolean = false) => {
-      let x = 30;
-      
-      cells.forEach((text, index) => {
-        // Gambar border
-        page.drawRectangle({
-          x,
-          y: y - rowHeight,
-          width: colWidths[index],
-          height: rowHeight,
-          borderWidth: 1,
-          borderColor: rgb(0, 0, 0),
-        });
-
-        // Draw text
-        page.drawText(text, {
-          x: x + 2,
-          y: y - rowHeight + 5,
-          size: isHeader ? 9 : 8,
-          font: isHeader ? fontBold : font,
-          color: rgb(0, 0, 0),
-          maxWidth: colWidths[index] - 4,
-        });
-
-        x += colWidths[index];
-      });
-    };
-
-    // Draw header
-    drawTableRow(currentY, headers, true);
-    currentY -= rowHeight;
-
-    // Draw data rows
-    for (const surat of suratList) {
-      // Cek jika perlu halaman baru
-      if (currentY < 50) {
-        page = pdfDoc.addPage([pageWidth, pageHeight]);
-        currentY = pageHeight - 50;
-        
-        // Draw header di halaman baru
-        drawTableRow(currentY, headers, true);
-        currentY -= rowHeight;
-      }
-
-      const rowData = [
-        surat.nomorUrut?.toString() || "-",
-        surat.tanggalKirim ? new Date(surat.tanggalKirim).toLocaleDateString('id-ID') : "-",
-        `${surat.tanggalSurat ? new Date(surat.tanggalSurat).toLocaleDateString('id-ID') : "-"}\n${surat.nomorSurat || "-"}`,
-        surat.perihal?.substring(0, 40) + (surat.perihal && surat.perihal.length > 40 ? "..." : "") || "-",
-        surat.tujuan?.substring(0, 25) + (surat.tujuan && surat.tujuan.length > 25 ? "..." : "") || "-",
-        surat.keterangan?.substring(0, 25) + (surat.keterangan && surat.keterangan.length > 25 ? "..." : "") || "-",
-      ];
-
-      drawTableRow(currentY, rowData, false);
-      currentY -= rowHeight;
+    // 2) Fetch from Vercel Blob
+    const blobRes = await fetch(surat.signDirectory);
+    if (!blobRes.ok || !blobRes.body) {
+      return NextResponse.json(
+        { ok: false, error: "Gagal mengambil file dari storage" },
+        { status: 502 }
+      );
     }
 
-    // Konversi ke buffer
-    const pdfBytes = await pdfDoc.save();
-    const pdfBuffer = Buffer.from(pdfBytes);
+    // 3) Build a nice filename (fallback to extension from URL)
+    const url = new URL(surat.signDirectory);
+    const extMatch = url.pathname.match(/\.(png|jpg|jpeg|webp|gif|pdf|bmp|tif|tiff|svg)$/i);
+    const ext = extMatch ? extMatch[0].toLowerCase() : ".bin";
+    const safeNoSurat = (surat.nomorSurat || "tanda-tangan").replace(/[^\w.-]+/g, "_");
+    const filename = `${safeNoSurat}${ext}`;
 
-    // Return response PDF
-    return new Response(pdfBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="buku-ekspedisi-${new Date().toISOString().split('T')[0]}.pdf"`,
-      },
-    });
+    const contentType = blobRes.headers.get("content-type") || "application/octet-stream";
+    const headers = new Headers();
+    headers.set("content-type", contentType);
+    headers.set("content-disposition", `attachment; filename="${filename}"`);
+    const size = blobRes.headers.get("content-length");
+    if (size) headers.set("content-length", size);
 
-  } catch (error) {
-    console.error("PDF export error:", error);
+    // 4) Stream it back
+    return new Response(blobRes.body, { headers, status: 200 });
+  } catch (err) {
+    console.error("GET /api/surat/[id]/download error:", err);
     return NextResponse.json(
-      { 
-        ok: false, 
-        error: "Gagal membuat PDF: " + (error instanceof Error ? error.message : "Unknown error") 
-      },
+      { ok: false, error: "Download failed" },
       { status: 500 }
     );
   }
