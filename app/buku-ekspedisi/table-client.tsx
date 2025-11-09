@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import {
   AlertTriangle,
   ArrowUpDown, // Ditambahkan untuk ikon modal
@@ -12,6 +11,7 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 /* Reusable button */
 const Button = ({
@@ -454,13 +454,13 @@ export default function TableClient({
                   <button
                     type="button"
                     title="Download"
-                    onClick={() => window.open(`/api/surat/${item.id}/download`, "_blank")}
                     className="p-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
                   >
                     <DownloadCloud size={16} />
                   </button>
                   <button
                     type="button"
+                    onClick={() => window.open(`/api/surat/${item.id}/download-surat`, "_blank")}
                     title="Aksi Lain"
                     className="p-2 bg-teal-500 text-white rounded-md shadow hover:bg-teal-600 transition-colors"
                   >
