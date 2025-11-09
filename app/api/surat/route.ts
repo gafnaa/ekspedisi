@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob"; // <-- upload to Vercel Blob
 
+// ... (Fungsi GET tetap sama) ...
 export async function GET() {
   try {
     const rows = await prisma.suratKeluar.findMany({
@@ -43,9 +44,12 @@ export async function POST(req: NextRequest) {
     const perihal = form.get("perihal") as string | null;
     const tujuan = form.get("tujuan") as string | null;
     const keterangan =
-      (form.get("keterangan") as string | null) && (form.get("keterangan") as string) !== ""
+      (form.get("keterangan") as string | null) &&
+      (form.get("keterangan") as string) !== ""
         ? (form.get("keterangan") as string)
         : null;
+
+    // --- PERUBAHAN: Dapatkan userId dari form ---
     const userId = form.get("userId") as string | null;
 
     // Basic validation (same spirit as before)
@@ -54,12 +58,13 @@ export async function POST(req: NextRequest) {
       !tanggalSuratRaw ||
       !tanggalPengirimanRaw ||
       !tujuan ||
-      !perihal
+      !perihal ||
+      !userId // <-- Tambahkan validasi userId
     ) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Tolong lengkapi data secara lengkap.",
+          error: "Tolong lengkapi data secara lengkap (termasuk User ID).",
         },
         { status: 400 }
       );
@@ -69,23 +74,15 @@ export async function POST(req: NextRequest) {
     const tanggalSurat = new Date(tanggalSuratRaw);
     const tanggalKirim = new Date(tanggalPengirimanRaw);
 
-    // Grab the file from the form
-    // In Next.js route handlers, formData().get() returns a Web File object for <input type="file" />
     const berkasFile = form.get("berkas") as File | null;
 
     let signDirectory: string | null = null;
 
     if (berkasFile && berkasFile.size > 0) {
-      // Upload the file to Vercel Blob.
-      // This uses your BLOB_READ_WRITE_TOKEN automatically from env.
-      // We mark it public so you can access it later, and addRandomSuffix
-      // so filenames don't collide. :contentReference[oaicite:3]{index=3}
       const blob = await put(berkasFile.name, berkasFile, {
         access: "public",
         addRandomSuffix: true,
       });
-
-      // We'll store the public URL in the DB
       signDirectory = blob.url;
     }
 
@@ -98,8 +95,8 @@ export async function POST(req: NextRequest) {
         perihal,
         tujuan,
         keterangan,
-        userId: userId ?? "0326d571-2e5f-4d3c-87f4-781461b238e2",
-        signDirectory, // <-- <- this is the Blob URL
+        userId: userId, // <-- Gunakan userId dari form, hapus fallback
+        signDirectory,
       },
     });
 
@@ -107,7 +104,6 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Error creating surat:", error);
 
-    // Handle duplicate nomorSurat (unique constraint)
     if (
       error?.code === "P2002" &&
       (error?.meta?.target?.includes("nomorSurat") ||
@@ -122,11 +118,25 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Tangani jika userId tidak valid (Foreign Key constraint)
+    if (
+      error?.code === "P2003" ||
+      String(error).includes("Foreign key constraint failed")
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "User ID yang dikirim tidak valid atau tidak ditemukan di database.",
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       {
         ok: false,
-        error:
-          "Terjadi kesalahan saat menyimpan data. Silakan coba lagi.",
+        error: "Terjadi kesalahan saat menyimpan data. Silakan coba lagi.",
       },
       { status: 500 }
     );

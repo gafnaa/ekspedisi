@@ -192,16 +192,17 @@ interface FormData {
   nomorUrut?: string;
   kodeSurat: string;
   nomorSurat: string;
-  tanggalSurat: string;         // YYYY-MM-DD (string in state)
+  tanggalSurat: string; // YYYY-MM-DD (string in state)
   tujuan: string;
   isiSingkat: string;
-  tanggalPengiriman: string;    // YYYY-MM-DD (string in state)
+  tanggalPengiriman: string; // YYYY-MM-DD (string in state)
   berkas: File | null;
   keterangan: string;
 }
 
 interface BukuEkspedisiFormProps {
   dataAwal?: Partial<FormData> & {
+    id?: string; // Pastikan ID ada di dataAwal untuk mode edit
     perihal?: string;
     tanggalKirim?: string;
   };
@@ -213,6 +214,9 @@ export default function BukuEkspedisiForm({
   isEditMode,
 }: BukuEkspedisiFormProps) {
   const router = useRouter();
+
+  // --- State untuk menyimpan userId yang sedang login ---
+  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
 
   // initial form state, WITHOUT nomorUrut
   const [formData, setFormData] = useState<FormData>(() => {
@@ -241,28 +245,52 @@ export default function BukuEkspedisiForm({
   });
 
   // useEffect ini akan mengisi form jika kita dalam mode Edit
-  // useEffect ini akan mengisi form jika kita dalam mode Edit
   useEffect(() => {
     if (isEditMode && dataAwal) {
-      // 🔧 PERBAIKAN: Pastikan mapping field yang benar
+      // 肌 PERBAIKAN: Pastikan mapping field yang benar
       setFormData({
-        nomorUrut: dataAwal.nomorUrut?.toString() || '',
-        kodeSurat: dataAwal.kodeSurat || '',
-        nomorSurat: dataAwal.nomorSurat || '',
-        // 🔧 PERBAIKAN: Format tanggal untuk input type="date"
-        tanggalSurat: dataAwal.tanggalSurat 
-          ? new Date(dataAwal.tanggalSurat).toISOString().split('T')[0]
-          : '',
-        tujuan: dataAwal.tujuan || '',
-        isiSingkat: dataAwal.isiSingkat || dataAwal.perihal || '', // 🔧 PERBAIKAN: handle perihal
-        tanggalPengiriman: (dataAwal.tanggalPengiriman || dataAwal.tanggalKirim)
-          ? new Date((dataAwal.tanggalPengiriman || dataAwal.tanggalKirim) as string).toISOString().split('T')[0]
-          : '',
+        nomorUrut: dataAwal.nomorUrut?.toString() || "",
+        kodeSurat: dataAwal.kodeSurat || "",
+        nomorSurat: dataAwal.nomorSurat || "",
+        // 肌 PERBAIKAN: Format tanggal untuk input type="date"
+        tanggalSurat: dataAwal.tanggalSurat
+          ? new Date(dataAwal.tanggalSurat).toISOString().split("T")[0]
+          : "",
+        tujuan: dataAwal.tujuan || "",
+        isiSingkat: dataAwal.isiSingkat || dataAwal.perihal || "", // 肌 PERBAIKAN: handle perihal
+        tanggalPengiriman:
+          dataAwal.tanggalPengiriman || dataAwal.tanggalKirim
+            ? new Date(
+                (dataAwal.tanggalPengiriman || dataAwal.tanggalKirim) as string
+              )
+                .toISOString()
+                .split("T")[0]
+            : "",
         berkas: null, // Tetap null untuk file
-        keterangan: dataAwal.keterangan || '',
+        keterangan: dataAwal.keterangan || "",
       });
     }
   }, [isEditMode, dataAwal]);
+
+  // --- Baca userId dari localStorage saat komponen dimuat ---
+  useEffect(() => {
+    const id = localStorage.getItem("userId");
+    if (id) {
+      setLoggedInUserId(id);
+    } else {
+      // Jika tidak ada ID, user tidak login dengan benar.
+      console.error("User ID not found in localStorage. Redirecting to login.");
+      // Tampilkan notifikasi error sebelum redirect
+      setNotif({
+        color: "danger",
+        title: "Sesi Tidak Ditemukan",
+        description: "Anda akan diarahkan ke halaman login.",
+      });
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    }
+  }, [router]);
 
   const [notif, setNotif] = useState<{
     color: "success" | "danger";
@@ -273,7 +301,7 @@ export default function BukuEkspedisiForm({
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -284,7 +312,7 @@ export default function BukuEkspedisiForm({
 
   const handleDateSelect = (
     name: "tanggalSurat" | "tanggalPengiriman",
-    date: string,
+    date: string
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -306,71 +334,134 @@ export default function BukuEkspedisiForm({
     }
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setNotif(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNotif(null);
 
-  // Basic required fields (same validation idea as before)
-  if (
-    !formData.nomorSurat ||
-    !formData.tanggalSurat ||
-    !formData.tujuan ||
-    !formData.isiSingkat ||
-    !formData.tanggalPengiriman
-  ) {
-    setNotif({
-      color: "danger",
-      title: "Gagal menyimpan",
-      description: "Tolong Lengkapi Data Secara Lengkap.",
-    });
-    return;
-  }
+    // --- Validasi loggedInUserId sebelum submit ---
+    if (!loggedInUserId) {
+      setNotif({
+        color: "danger",
+        title: "Gagal menyimpan",
+        description: "User ID tidak ditemukan. Silakan login kembali.",
+      });
+      return;
+    }
 
-  // Build multipart form data to send to /api/surat
-  const fd = new FormData();
-  fd.append("nomorSurat", formData.nomorSurat);
-  fd.append("tanggalSurat", formData.tanggalSurat); // "YYYY-MM-DD"
-  fd.append("tanggalPengiriman", formData.tanggalPengiriman); // "YYYY-MM-DD"
-  fd.append("perihal", formData.isiSingkat);
-  fd.append("tujuan", formData.tujuan);
-  fd.append("keterangan", formData.keterangan || "");
-  fd.append(
-    "userId",
-    "0326d571-2e5f-4d3c-87f4-781461b238e2"
-  );
+    // Basic required fields (same validation idea as before)
+    if (
+      !formData.nomorSurat ||
+      !formData.tanggalSurat ||
+      !formData.tujuan ||
+      !formData.isiSingkat ||
+      !formData.tanggalPengiriman
+    ) {
+      setNotif({
+        color: "danger",
+        title: "Gagal menyimpan",
+        description: "Tolong Lengkapi Data Secara Lengkap.",
+      });
+      return;
+    }
 
-  if (formData.berkas) {
-    fd.append("berkas", formData.berkas, formData.berkas.name);
-  }
+    // --- Logika untuk PUT (Edit) vs POST (Create) ---
+    if (isEditMode && dataAwal?.id) {
+      // --- Handle EDIT (PUT dengan JSON) ---
+      // Catatan: Alur ini tidak mendukung upload ulang file saat edit,
+      // karena endpoint PUT Anda di `api/surat/[id]/route.ts` hanya menerima JSON.
+      // Untuk mendukung upload file, endpoint PUT tsb harus diubah untuk menerima FormData.
+      try {
+        const payload = {
+          ...formData,
+          perihal: formData.isiSingkat, // Pastikan perihal ter-mapping dari isiSingkat
+          tanggalPengiriman: formData.tanggalPengiriman,
+          userId: loggedInUserId, // Gunakan userId yang dinamis
+        };
 
-  const res = await fetch("/api/surat", {
-    method: "POST",
-    body: fd,
-  });
+        const res = await fetch(`/api/surat/${dataAwal.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-  const json = await res.json();
+        const json = await res.json();
+        if (!json.ok) {
+          setNotif({
+            color: "danger",
+            title: "Gagal update",
+            description: json.error || "Server error",
+          });
+          return;
+        }
 
-  if (!json.ok) {
-    setNotif({
-      color: "danger",
-      title: "Gagal menyimpan",
-      description: json.error || "Terjadi kesalahan pada server.",
-    });
-    return;
-  }
+        setNotif({
+          color: "success",
+          title: "Data berhasil diupdate!",
+          description: "Anda akan dialihkan.",
+        });
+        setTimeout(() => router.push("/buku-ekspedisi"), 2000);
+      } catch (err) {
+        setNotif({
+          color: "danger",
+          title: "Error",
+          description: "Gagal koneksi saat update.",
+        });
+      }
+      return; // Selesai untuk mode Edit
+    }
 
-  setNotif({
-    color: "success",
-    title: "Data berhasil disimpan!",
-    description: "Anda akan dialihkan kembali ke halaman utama.",
-  });
+    // --- Handle CREATE (POST dengan FormData) ---
+    // Build multipart form data to send to /api/surat
+    const fd = new FormData();
+    fd.append("nomorSurat", formData.nomorSurat);
+    fd.append("tanggalSurat", formData.tanggalSurat); // "YYYY-MM-DD"
+    fd.append("tanggalPengiriman", formData.tanggalPengiriman); // "YYYY-MM-DD"
+    fd.append("perihal", formData.isiSingkat);
+    fd.append("tujuan", formData.tujuan);
+    fd.append("keterangan", formData.keterangan || "");
 
-  setTimeout(() => {
-    router.push("/buku-ekspedisi");
-  }, 2000);
-};
+    // --- Gunakan userId dari state (localStorage) ---
+    fd.append("userId", loggedInUserId);
 
-  
+    if (formData.berkas) {
+      fd.append("berkas", formData.berkas, formData.berkas.name);
+    }
+
+    try {
+      const res = await fetch("/api/surat", {
+        method: "POST",
+        body: fd,
+      });
+
+      const json = await res.json();
+
+      if (!json.ok) {
+        setNotif({
+          color: "danger",
+          title: "Gagal menyimpan",
+          description: json.error || "Terjadi kesalahan pada server.",
+        });
+        return;
+      }
+
+      setNotif({
+        color: "success",
+        title: "Data berhasil disimpan!",
+        description: "Anda akan dialihkan kembali ke halaman utama.",
+      });
+
+      setTimeout(() => {
+        router.push("/buku-ekspedisi");
+      }, 2000);
+    } catch (err) {
+      setNotif({
+        color: "danger",
+        title: "Koneksi Error",
+        description: "Gagal terhubung ke server saat membuat data.",
+      });
+    }
+  };
+
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen text-black">
       {/* Kontainer Notifikasi (Tengah Atas) */}
