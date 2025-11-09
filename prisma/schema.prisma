@@ -32,6 +32,7 @@ model User {
   username      String        @unique
   namaLengkap   String
   role          Role          @default(STAF)
+  passwordHash  String
   tandaTangan   Bytes?
   createdAt     DateTime      @default(now())
 

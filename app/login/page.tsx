@@ -65,7 +65,6 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2 mt-1 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="admin, staf1, or user"
               autoComplete="username"
             />
           </div>
@@ -82,7 +81,6 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 mt-1 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="admin123 or user123"
               autoComplete="current-password"
             />
           </div>

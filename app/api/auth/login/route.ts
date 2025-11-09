@@ -1,5 +1,7 @@
+// Lokasi: app/api/auth/login/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import bcrypt from "bcrypt";
 
 export async function POST(req: Request) {
   try {
@@ -7,38 +9,34 @@ export async function POST(req: Request) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { ok: false, error: "Username and password are required" },
+        { ok: false, error: "Username dan password diperlukan" },
         { status: 400 }
       );
     }
 
-    // Peringatan: Password tidak di-hash! Ini tidak aman untuk produksi.
-    // Ini hanya meniru logika login Anda saat ini.
+    // 1. Cari user di database
     const user = await prisma.user.findUnique({
       where: { username },
     });
 
     if (!user) {
       return NextResponse.json(
-        { ok: false, error: "User not found" },
-        { status: 404 }
+        { ok: false, error: "Username atau password salah" },
+        { status: 401 } // Unauthorized
       );
     }
 
-    // Validasi password (sesuai logika lama Anda)
-    const isValidPassword =
-      (user.username === "admin" && password === "admin123") ||
-      (user.username === "user" && password === "user123") ||
-      (user.username === 'staf1' && password === 'user123'); // Menambahkan staf1 dari seed
+    // 2. Bandingkan password yang diberikan dengan hash di database
+    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
 
-    if (!isValidPassword) {
+    if (!passwordMatch) {
       return NextResponse.json(
-        { ok: false, error: "Invalid password" },
-        { status: 401 }
+        { ok: false, error: "Username atau password salah" },
+        { status: 401 } // Unauthorized
       );
     }
 
-    // Jika berhasil, kembalikan data user (terutama id dan role)
+    // 3. Jika berhasil, kembalikan data user
     return NextResponse.json({
       ok: true,
       data: {
