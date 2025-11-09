@@ -4,25 +4,44 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState(""); // Ganti email menjadi username
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // Tambahkan loading state
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
-    if (email === "admin" && password === "admin123") {
-      // Set role for Admin
-      localStorage.setItem("userRole", "admin");
-      router.push("/buku-ekspedisi");
-    } else if (email === "user" && password === "user123") {
-      // Set role for Staf/User
-      localStorage.setItem("userRole", "staf");
-      router.push("/buku-ekspedisi");
-    } else {
-      setError("Email or password incorrect.");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const json = await res.json();
+
+      if (!json.ok) {
+        setError(json.error || "Login failed.");
+      } else {
+        // --- INI BAGIAN PENTING ---
+        // Simpan ID dan Role ke localStorage
+        localStorage.setItem("userRole", json.data.role);
+        localStorage.setItem("userId", json.data.id);
+        localStorage.setItem("userNama", json.data.namaLengkap);
+        // -------------------------
+
+        router.push("/buku-ekspedisi");
+      }
+    } catch (err) {
+      setError("Failed to connect to server.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -35,18 +54,19 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label
-              htmlFor="email"
+              htmlFor="username"
               className="block text-sm font-medium text-gray-700"
             >
-              Email (username)
+              Username
             </label>
             <input
-              id="email"
+              id="username"
               type="text"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2 mt-1 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="admin or user"
+              placeholder="admin, staf1, or user"
+              autoComplete="username"
             />
           </div>
           <div>
@@ -63,14 +83,16 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 mt-1 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="admin123 or user123"
+              autoComplete="current-password"
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            className="w-full px-4 py-2 font-medium text-white bg-blue-600 rounded-lg shadow hover:bg-blue-700 transition-colors"
+            disabled={isLoading}
+            className="w-full px-4 py-2 font-medium text-white bg-blue-600 rounded-lg shadow hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            Login
+            {isLoading ? "Loading..." : "Login"}
           </button>
         </form>
       </div>
