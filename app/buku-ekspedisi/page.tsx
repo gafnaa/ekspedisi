@@ -2,10 +2,10 @@
 "use client"; // Add use client directive
 
 import TableClient from "@/app/buku-ekspedisi/table-client";
-import { Download, Plus, Printer, Search, LogOut } from "lucide-react"; // Import LogOut
+import { Download, LogOut, Plus, Printer, Search } from "lucide-react"; // Import LogOut
 import Link from "next/link";
-import { useState, useEffect } from "react"; // Import useState and useEffect
 import { useRouter } from "next/navigation"; // Import useRouter
+import { useEffect, useState } from "react"; // Import useState and useEffect
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +107,9 @@ export default function BukuEkspedisiPage() {
             Tambah Data
           </button>
         </Link>
-        <button className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition-colors w-full md:w-auto">
+        <button 
+          onClick={() => router.push("/buku-ekspedisi/cetak")}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition-colors w-full md:w-auto">
           <Printer size={18} />
           Cetak
         </button>
