@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import * as XLSX from 'xlsx';
 
 // Fungsi helper untuk format tanggal
-function formatTanggal(date) {
+function formatTanggal(date:any) {
   if (!date) return "";
   const d = new Date(date);
   const day = d.getDate().toString().padStart(2, '0');
@@ -158,7 +158,7 @@ export async function GET() {
     // --- STYLING (Untuk Center Alignment) ---
     
     // Helper untuk mendapatkan referensi sel (misal: "A1") dari index baris/kolom
-    const getCellRef = (r, c) => XLSX.utils.encode_cell({ r, c });
+    const getCellRef = (r:any, c:any) => XLSX.utils.encode_cell({ r, c });
 
     // Set default style (center alignment) untuk Header Instansi, Judul, dan Penandatangan
     const centerStyle = { alignment: { horizontal: "center" } };

@@ -2,147 +2,214 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
-export async function GET() {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
   try {
-    // Ambil semua data surat keluar
-    const suratList = await prisma.suratKeluar.findMany({
-      orderBy: { nomorUrut: "asc" },
+    // === 1. Ambil Data Surat ===
+    const surat = await prisma.suratKeluar.findUnique({
+      where: { id },
     });
 
-    // Jika tidak ada data, return error yang lebih informatif
-    if (!suratList || suratList.length === 0) {
+    if (!surat) {
       return NextResponse.json(
-        { 
-          ok: false, 
-          error: "Tidak ada data surat keluar yang tersedia untuk diekspor" 
-        }, 
+        { error: "Surat tidak ditemukan" },
         { status: 404 }
       );
     }
 
-    // Buat PDF document
+    // === 2. Inisialisasi Dokumen PDF ===
     const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595, 842]); // A4
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const { width, height } = page.getSize();
 
-    // Ukuran halaman A4 portrait
-    const pageWidth = 595;  // A4 width in points
-    const pageHeight = 842; // A4 height in points
+    // === 3. Header (Kop Surat) ===
+    const centerX = width / 2;
     
-    let page = pdfDoc.addPage([pageWidth, pageHeight]);
-    let currentY = pageHeight - 50; // Start from top
+    // Judul utama
+    page.drawText("PEMERINTAH DESA KIAWA DUA BARAT", {
+      x: centerX - (font.widthOfTextAtSize("PEMERINTAH DESA KIAWA DUA BARAT", 14) / 2),
+      y: height - 70,
+      size: 14,
+      font,
+      color: rgb(0, 0, 0),
+    });
 
-    // Judul
+    // Sub judul
     page.drawText("BUKU EKSPEDISI SURAT KELUAR", {
-      x: 50,
-      y: currentY,
-      size: 16,
-      font: fontBold,
+      x: centerX - (font.widthOfTextAtSize("BUKU EKSPEDISI SURAT KELUAR", 12) / 2),
+      y: height - 90,
+      size: 12,
+      font,
       color: rgb(0, 0, 0),
     });
 
-    currentY -= 30;
-
-    page.drawText(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')} - Total: ${suratList.length} data`, {
-      x: 50,
-      y: currentY,
-      size: 10,
-      font: font,
+    // Garis pemisah
+    page.drawLine({
+      start: { x: 50, y: height - 105 },
+      end: { x: width - 50, y: height - 105 },
+      thickness: 1,
       color: rgb(0, 0, 0),
     });
 
-    currentY -= 40;
+    // === 4. Tabel Data ===
+    let yPos = height - 130;
 
     // Header tabel
     const headers = [
-      "NO",
-      "TANGGAL KIRIM",
-      "TANGGAL & NOMOR SURAT", 
-      "ISI SINGKAT",
-      "TUJUAN",
+      "NO URUT",
+      "TGL PENGIRIMAN", 
+      "TGL & NO SURAT",
+      "ISI SINGKAT SURAT",
+      "DITUJUKAN KEPADA",
       "KETERANGAN"
     ];
 
-    const colWidths = [30, 70, 120, 150, 100, 80];
+    const columnWidths = [50, 70, 90, 120, 100, 100];
     const rowHeight = 20;
+    const cellPadding = 5;
 
-    // Fungsi untuk menggambar baris
-    const drawTableRow = (y: number, cells: string[], isHeader: boolean = false) => {
-      let x = 30;
-      
-      cells.forEach((text, index) => {
-        // Gambar border
-        page.drawRectangle({
-          x,
-          y: y - rowHeight,
-          width: colWidths[index],
-          height: rowHeight,
-          borderWidth: 1,
-          borderColor: rgb(0, 0, 0),
-        });
-
-        // Draw text
-        page.drawText(text, {
-          x: x + 2,
-          y: y - rowHeight + 5,
-          size: isHeader ? 9 : 8,
-          font: isHeader ? fontBold : font,
-          color: rgb(0, 0, 0),
-          maxWidth: colWidths[index] - 4,
-        });
-
-        x += colWidths[index];
+    // Gambar header tabel dengan background abu-abu
+    let xPos = 30;
+    headers.forEach((header, index) => {
+      // Background header
+      page.drawRectangle({
+        x: xPos,
+        y: yPos - rowHeight + 2,
+        width: columnWidths[index],
+        height: rowHeight,
+        color: rgb(0.9, 0.9, 0.9),
       });
-    };
 
-    // Draw header
-    drawTableRow(currentY, headers, true);
-    currentY -= rowHeight;
+      // Teks header
+      page.drawText(header, {
+        x: xPos + cellPadding,
+        y: yPos - rowHeight + cellPadding + 5,
+        size: 8,
+        font,
+        color: rgb(0, 0, 0),
+      });
 
-    // Draw data rows
-    for (const surat of suratList) {
-      // Cek jika perlu halaman baru
-      if (currentY < 50) {
-        page = pdfDoc.addPage([pageWidth, pageHeight]);
-        currentY = pageHeight - 50;
-        
-        // Draw header di halaman baru
-        drawTableRow(currentY, headers, true);
-        currentY -= rowHeight;
-      }
+      // Border header
+      page.drawRectangle({
+        x: xPos,
+        y: yPos - rowHeight + 2,
+        width: columnWidths[index],
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+      });
 
-      const rowData = [
-        surat.nomorUrut?.toString() || "-",
-        surat.tanggalKirim ? new Date(surat.tanggalKirim).toLocaleDateString('id-ID') : "-",
-        `${surat.tanggalSurat ? new Date(surat.tanggalSurat).toLocaleDateString('id-ID') : "-"}\n${surat.nomorSurat || "-"}`,
-        surat.perihal?.substring(0, 40) + (surat.perihal && surat.perihal.length > 40 ? "..." : "") || "-",
-        surat.tujuan?.substring(0, 25) + (surat.tujuan && surat.tujuan.length > 25 ? "..." : "") || "-",
-        surat.keterangan?.substring(0, 25) + (surat.keterangan && surat.keterangan.length > 25 ? "..." : "") || "-",
-      ];
-
-      drawTableRow(currentY, rowData, false);
-      currentY -= rowHeight;
-    }
-
-    // Konversi ke buffer
-    const pdfBytes = await pdfDoc.save();
-    const pdfBuffer = Buffer.from(pdfBytes);
-
-    // Return response PDF
-    return new Response(pdfBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="buku-ekspedisi-${new Date().toISOString().split('T')[0]}.pdf"`,
-      },
+      xPos += columnWidths[index];
     });
 
+    yPos -= rowHeight + 5;
+
+    // Data rows - untuk single surat, kita buat satu baris
+    const rowData = [
+      surat.nomorUrut?.toString() || "-",
+      surat.tanggalKirim ? new Date(surat.tanggalKirim).toLocaleDateString('id-ID') : "-",
+      `${surat.tanggalSurat ? new Date(surat.tanggalSurat).toLocaleDateString('id-ID') : "-"}\n${surat.nomorSurat || "-"}`,
+      surat.perihal || "-",
+      surat.tujuan || "-",
+      surat.keterangan || "-"
+    ];
+
+    // Gambar baris data
+    xPos = 30;
+    rowData.forEach((data, index) => {
+      const lines = data.toString().split('\n');
+      
+      // Border cell
+      page.drawRectangle({
+        x: xPos,
+        y: yPos - rowHeight,
+        width: columnWidths[index],
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+      });
+
+      // Teks cell (support multi-line)
+      lines.forEach((line, lineIndex) => {
+        page.drawText(line, {
+          x: xPos + cellPadding,
+          y: yPos - rowHeight + cellPadding + 8 - (lineIndex * 8),
+          size: 8,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      });
+
+      xPos += columnWidths[index];
+    });
+
+    // === 5. Footer (Tanda Tangan) - POSISI DIPERBAIKI ===
+    const footerY = 640; // Dinaikkan dari 120 menjadi 200
+
+    // Kiri - Mengetahui
+    page.drawText("Mengetahui,", {
+      x: 50,
+      y: footerY,
+      size: 10,
+      font,
+    });
+    page.drawText("Kepala Desa Kiawa Dua Barat", {
+      x: 50,
+      y: footerY - 20,
+      size: 10,
+      font,
+    });
+    page.drawText("(_________________)", {
+      x: 50,
+      y: footerY - 40, // Disederhanakan jaraknya
+      size: 10,
+      font,
+    });
+
+    // Kanan - Sekretaris
+    const currentDate = new Date().toLocaleDateString("id-ID", {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    page.drawText(`Kiawa Dua Barat, ${currentDate}`, {
+      x: width - 200,
+      y: footerY,
+      size: 10,
+      font,
+    });
+    page.drawText("Sekretaris Desa", {
+      x: width - 150,
+      y: footerY - 20,
+      size: 10,
+      font,
+    });
+    page.drawText("(_________________)", {
+      x: width - 170,
+      y: footerY - 40, // Disederhanakan jaraknya
+      size: 10,
+      font,
+    });
+
+    // === 6. Simpan dan Kirim PDF ===
+    const pdfBytes = await pdfDoc.save();
+
+    return new Response(pdfBytes, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="buku-ekspedisi-${surat.nomorSurat || id}.pdf"`,
+      },
+    });
   } catch (error) {
     console.error("PDF export error:", error);
     return NextResponse.json(
-      { 
-        ok: false, 
-        error: "Gagal membuat PDF: " + (error instanceof Error ? error.message : "Unknown error") 
-      },
+      { error: "Gagal membuat PDF" },
       { status: 500 }
     );
   }
