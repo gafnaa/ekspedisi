@@ -460,7 +460,7 @@ export default function TableClient({
                   </button>
                   <button
                     type="button"
-                    onClick={() => window.open(`/api/surat/${item.id}/download`, "_blank")}
+                    onClick={() => window.open(`/api/surat/${item.id}/download-surat`, "_blank")}
                     title="Aksi Lain"
                     className="p-2 bg-teal-500 text-white rounded-md shadow hover:bg-teal-600 transition-colors"
                   >
