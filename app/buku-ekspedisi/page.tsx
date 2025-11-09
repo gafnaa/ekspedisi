@@ -86,7 +86,7 @@ export default function BukuEkspedisiPage() {
 
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 relative z-[500]">
         <h1 className="text-2xl font-semibold text-gray-800">
           Buku Ekspedisi
         </h1>
