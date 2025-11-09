@@ -218,7 +218,7 @@ export default function TableClient({
   itemsPerPage: number;
   selectedYear: string;
   searchQuery?: string;
-  userRole: "admin" | "staf"; // --- [MODIFICATION] Define the prop type ---
+  userRole: "ADMIN" | "STAF"; // --- [MODIFICATION] Define the prop type ---
 }) {
   // helper to format dates
   const fmt = (iso?: string | null) => {
@@ -307,7 +307,7 @@ export default function TableClient({
     console.log("confirm delete id:", itemToDeleteId);
 
     try {
-      const res = await fetch(`/api/surat/${itemToDeleteId}`, {
+      const res = await fetch(`/api/surat/${itemToDeleteId}/delete`, {
         method: "DELETE",
       });
 
@@ -438,7 +438,7 @@ export default function TableClient({
                   </a>
 
                   {/* --- [MODIFICATION] Conditional Delete Button --- */}
-                  {userRole === "admin" && (
+                  {userRole === "ADMIN" && (
                     <button
                       type="button"
                       title="Hapus Data"

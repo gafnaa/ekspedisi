@@ -25,12 +25,12 @@ export default function BukuEkspedisiPage() {
   const [searchQuery, setSearchQuery] = useState("");
   
   // --- New state for role ---
-  const [userRole, setUserRole] = useState<"admin" | "staf" | null>(null);
+  const [userRole, setUserRole] = useState<"ADMIN" | "STAF" | null>(null);
   const router = useRouter(); // Initialize router
 
   useEffect(() => {
     // --- Check for user role in localStorage ---
-    const role = localStorage.getItem("userRole") as "admin" | "staf" | null;
+    const role = localStorage.getItem("userRole") as "ADMIN" | "STAF" | null;
     if (!role) {
       // If no role, redirect to login
       router.push("/login");
