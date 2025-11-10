@@ -454,6 +454,7 @@ export default function TableClient({
                   <button
                     type="button"
                     title="Download"
+                    onClick={() => window.open(`/api/surat/${item.id}/download`, "_blank")}
                     className="p-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
                   >
                     <DownloadCloud size={16} />
