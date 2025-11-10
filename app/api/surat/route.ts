@@ -6,6 +6,9 @@ import { put } from "@vercel/blob"; // <-- upload to Vercel Blob
 export async function GET() {
   try {
     const rows = await prisma.suratKeluar.findMany({
+      where: {
+        deletedAt: null, // Exclude soft-deleted records
+      },
       orderBy: { tanggalSurat: "asc" },
     });
 

@@ -25,12 +25,12 @@ export default function BukuEkspedisiPage() {
   const [searchQuery, setSearchQuery] = useState("");
   
   // --- New state for role ---
-  const [userRole, setUserRole] = useState<"admin" | "staf" | null>(null);
+  const [userRole, setUserRole] = useState<"ADMIN" | "STAF" | null>(null);
   const router = useRouter(); // Initialize router
 
   useEffect(() => {
     // --- Check for user role in localStorage ---
-    const role = localStorage.getItem("userRole") as "admin" | "staf" | null;
+    const role = localStorage.getItem("userRole") as "ADMIN" | "STAF" | null;
     if (!role) {
       // If no role, redirect to login
       router.push("/login");
@@ -86,7 +86,7 @@ export default function BukuEkspedisiPage() {
 
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 relative z-[500]">
         <h1 className="text-2xl font-semibold text-gray-800">
           Buku Ekspedisi
         </h1>
