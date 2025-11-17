@@ -29,10 +29,12 @@ export async function GET(
 
     // === 3. Header (Kop Surat) ===
     const centerX = width / 2;
-    
+
     // Judul utama
     page.drawText("PEMERINTAH DESA KIAWA DUA BARAT", {
-      x: centerX - (font.widthOfTextAtSize("PEMERINTAH DESA KIAWA DUA BARAT", 14) / 2),
+      x:
+        centerX -
+        font.widthOfTextAtSize("PEMERINTAH DESA KIAWA DUA BARAT", 14) / 2,
       y: height - 70,
       size: 14,
       font,
@@ -41,7 +43,8 @@ export async function GET(
 
     // Sub judul
     page.drawText("BUKU EKSPEDISI SURAT KELUAR", {
-      x: centerX - (font.widthOfTextAtSize("BUKU EKSPEDISI SURAT KELUAR", 12) / 2),
+      x:
+        centerX - font.widthOfTextAtSize("BUKU EKSPEDISI SURAT KELUAR", 12) / 2,
       y: height - 90,
       size: 12,
       font,
@@ -62,11 +65,11 @@ export async function GET(
     // Header tabel
     const headers = [
       "NO URUT",
-      "TGL PENGIRIMAN", 
+      "TGL PENGIRIMAN",
       "TGL & NO SURAT",
       "ISI SINGKAT SURAT",
       "DITUJUKAN KEPADA",
-      "KETERANGAN"
+      "KETERANGAN",
     ];
 
     const columnWidths = [50, 70, 90, 120, 100, 100];
@@ -111,19 +114,25 @@ export async function GET(
 
     // Data rows - untuk single surat, kita buat satu baris
     const rowData = [
-      surat.nomorUrut?.toString() || "-",
-      surat.tanggalKirim ? new Date(surat.tanggalKirim).toLocaleDateString('id-ID') : "-",
-      `${surat.tanggalSurat ? new Date(surat.tanggalSurat).toLocaleDateString('id-ID') : "-"}\n${surat.nomorSurat || "-"}`,
+      surat.nomorSurat?.toString() || "-",
+      surat.tanggalKirim
+        ? new Date(surat.tanggalKirim).toLocaleDateString("id-ID")
+        : "-",
+      `${
+        surat.tanggalSurat
+          ? new Date(surat.tanggalSurat).toLocaleDateString("id-ID")
+          : "-"
+      }\n${surat.nomorSurat || "-"}`,
       surat.perihal || "-",
       surat.tujuan || "-",
-      surat.keterangan || "-"
+      surat.keterangan || "-",
     ];
 
     // Gambar baris data
     xPos = 30;
     rowData.forEach((data, index) => {
-      const lines = data.toString().split('\n');
-      
+      const lines = data.toString().split("\n");
+
       // Border cell
       page.drawRectangle({
         x: xPos,
@@ -138,7 +147,7 @@ export async function GET(
       lines.forEach((line, lineIndex) => {
         page.drawText(line, {
           x: xPos + cellPadding,
-          y: yPos - rowHeight + cellPadding + 8 - (lineIndex * 8),
+          y: yPos - rowHeight + cellPadding + 8 - lineIndex * 8,
           size: 8,
           font,
           color: rgb(0, 0, 0),
@@ -173,9 +182,9 @@ export async function GET(
 
     // Kanan - Sekretaris
     const currentDate = new Date().toLocaleDateString("id-ID", {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
 
     page.drawText(`Kiawa Dua Barat, ${currentDate}`, {
@@ -200,17 +209,16 @@ export async function GET(
     // === 6. Simpan dan Kirim PDF ===
     const pdfBytes = await pdfDoc.save();
 
-    return new Response(pdfBytes, {
+    return new Response(new Blob([pdfBytes], { type: "application/pdf" }), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="buku-ekspedisi-${surat.nomorSurat || id}.pdf"`,
+        "Content-Disposition": `attachment; filename="buku-ekspedisi-${
+          surat.nomorSurat || id
+        }.pdf"`,
       },
     });
   } catch (error) {
     console.error("PDF export error:", error);
-    return NextResponse.json(
-      { error: "Gagal membuat PDF" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Gagal membuat PDF" }, { status: 500 });
   }
 }
