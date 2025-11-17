@@ -209,7 +209,11 @@ export async function GET(
     // === 6. Simpan dan Kirim PDF ===
     const pdfBytes = await pdfDoc.save();
 
-    return new Response(new Blob([pdfBytes], { type: "application/pdf" }), {
+    // Ensure we have a standard ArrayBuffer, not a SharedArrayBuffer
+    const buffer = new ArrayBuffer(pdfBytes.byteLength);
+    const newUint8Array = new Uint8Array(buffer);
+    newUint8Array.set(pdfBytes);
+    return new Response(new Blob([buffer], { type: "application/pdf" }), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="buku-ekspedisi-${

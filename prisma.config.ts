@@ -1,6 +1,4 @@
-import 'dotenv/config';
-import { defineConfig } from 'prisma/config';
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
 
-export default defineConfig({
-  seed: 'ts-node prisma/seed.ts',
-});
+export default defineConfig({});
