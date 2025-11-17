@@ -32,7 +32,9 @@ function formatTanggalSekarang() {
 export async function GET() {
   try {
     const suratList = await prisma.suratKeluar.findMany({
+      where: { deletedAt: null },
       orderBy: { createdAt: "asc" },
+      
     });
 
     if (suratList.length === 0) {
