@@ -144,7 +144,7 @@ export async function GET(
       });
 
       // Teks cell (support multi-line)
-      lines.forEach((line, lineIndex) => {
+      lines.forEach((line: string, lineIndex) => {
         page.drawText(line, {
           x: xPos + cellPadding,
           y: yPos - rowHeight + cellPadding + 8 - lineIndex * 8,
