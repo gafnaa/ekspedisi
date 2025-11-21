@@ -1,22 +1,26 @@
-# Use an official Node.js runtime as a parent image
+# --- Builder Stage ---
 FROM node:20-alpine AS builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json (or yarn.lock)
+# 1. Install dependencies sistem yang diperlukan untuk Alpine
+# libc6-compat wajib untuk Next.js/Prisma
+# python3, make, g++ diperlukan jika bcrypt perlu dicompile ulang
+RUN apk add --no-cache libc6-compat python3 make g++
+
+# 2. Copy file dependency
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# 3. Gunakan npm ci (clean install) yang lebih cepat dan deterministik daripada npm install
+RUN npm ci
 
-# Copy the rest of the application code
+# 4. Copy seluruh kode aplikasi
 COPY . .
 
-# Generate Prisma Client
+# 5. Generate Prisma Client (PENTING: Harus sebelum build)
 RUN npx prisma generate
 
-# Build the Next.js application
+# 6. Build aplikasi Next.js
 RUN npm run build
 
 # --- Production Stage ---
@@ -24,16 +28,18 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Copy built application from builder stage
+ENV NODE_ENV production
+
+# 7. Copy file hasil build dari stage builder
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/prisma ./prisma
 
-# Expose the port the app runs on
+# 8. Fix: Copy file konfigurasi TypeScript yang benar
+COPY --from=builder /app/next.config.ts ./next.config.ts
+
 EXPOSE 3000
 
-# Command to run the application
 CMD ["npm", "start"]
