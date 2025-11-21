@@ -89,7 +89,8 @@ export async function GET() {
       ],
     ]; // Data surat
 
-    suratList.forEach((surat: Surat, index) => {
+    // PERBAIKAN DI SINI: Menambahkan tipe ': number' pada index
+    suratList.forEach((surat: Surat, index: number) => {
       allRows.push([
         (index + 1).toString(),
         surat.tanggalKirim ? formatTanggal(surat.tanggalKirim) : "",
