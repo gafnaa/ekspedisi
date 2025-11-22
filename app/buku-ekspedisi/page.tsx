@@ -10,7 +10,7 @@ import { useEffect, useState } from "react"; // Import useState and useEffect
 export const dynamic = "force-dynamic";
 
 async function getData() {
-  const res = await fetch("http://localhost:3000/api/surat", {
+  const res = await fetch("/api/surat", {
     cache: "no-store",
   });
 
@@ -23,7 +23,7 @@ export default function BukuEkspedisiPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedYear, setSelectedYear] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // --- New state for role ---
   const [userRole, setUserRole] = useState<"ADMIN" | "STAF" | null>(null);
   const router = useRouter(); // Initialize router
@@ -87,9 +87,7 @@ export default function BukuEkspedisiPage() {
   return (
     <div className="p-6 md:p-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-4 relative z-[500]">
-        <h1 className="text-2xl font-semibold text-gray-800">
-          Buku Ekspedisi
-        </h1>
+        <h1 className="text-2xl font-semibold text-gray-800">Buku Ekspedisi</h1>
         <button
           onClick={handleLogout}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors"
@@ -107,9 +105,10 @@ export default function BukuEkspedisiPage() {
             Tambah Data
           </button>
         </Link>
-        <button 
+        <button
           onClick={() => router.push("/buku-ekspedisi/cetak")}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition-colors w-full md:w-auto">
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition-colors w-full md:w-auto"
+        >
           <Printer size={18} />
           Cetak
         </button>
