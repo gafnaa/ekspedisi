@@ -2,46 +2,54 @@
 "use client"; // Add use client directive
 
 import TableClient from "@/app/buku-ekspedisi/table-client";
-import { Download, LogOut, Plus, Printer, Search } from "lucide-react"; // Import LogOut
+import TableSkeleton from "@/app/buku-ekspedisi/table-skeleton"; // Import Skeleton
+import { SuratEkspedisi } from "@/app/buku-ekspedisi/types"; // Import Type
+import { Download, LogOut, Plus, Printer, Search } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter
-import { useEffect, useState } from "react"; // Import useState and useEffect
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export const dynamic = "force-dynamic";
 
 async function getData() {
-  const res = await fetch("/api/surat", {
-    cache: "no-store",
-  });
-
-  const json = await res.json();
-  return json.data;
+  try {
+    const res = await fetch("/api/surat", {
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch");
+    const json = await res.json();
+    return json.data;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return [];
+  }
 }
 
 export default function BukuEkspedisiPage() {
-  const [dataEkspedisi, setDataEkspedisi] = useState([]);
+  const [dataEkspedisi, setDataEkspedisi] = useState<SuratEkspedisi[]>([]); // Use Type
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedYear, setSelectedYear] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
 
   // --- New state for role ---
   const [userRole, setUserRole] = useState<"ADMIN" | "STAF" | null>(null);
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
   useEffect(() => {
     // --- Check for user role in localStorage ---
     const role = localStorage.getItem("userRole") as "ADMIN" | "STAF" | null;
     if (!role) {
-      // If no role, redirect to login
       router.push("/login");
     } else {
       setUserRole(role);
     }
-    // --- End of role check ---
 
     async function fetchData() {
+      setIsLoading(true);
       const data = await getData();
       setDataEkspedisi(data || []);
+      setIsLoading(false);
     }
     fetchData();
   }, [router]);
@@ -50,7 +58,7 @@ export default function BukuEkspedisiPage() {
   const distinctYears = Array.from(
     new Set(
       (dataEkspedisi || [])
-        .map((item: any) => new Date(item.tglSurat).getFullYear())
+        .map((item) => new Date(item.tglSurat).getFullYear())
         .filter((year) => !isNaN(year))
     )
   ).sort((a, b) => b - a);
@@ -69,19 +77,14 @@ export default function BukuEkspedisiPage() {
     setSearchQuery(e.target.value);
   };
 
-  // --- New Logout Handler ---
   const handleLogout = () => {
     localStorage.removeItem("userRole");
     router.push("/login");
   };
 
-  // Don't render anything until role is confirmed
-  if (!userRole) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-black">Loading...</p>
-      </div>
-    );
+  // Show Skeleton while loading role or data
+  if (!userRole || isLoading) {
+    return <TableSkeleton />;
   }
 
   return (

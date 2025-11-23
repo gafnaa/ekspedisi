@@ -2,7 +2,7 @@
 
 import {
   AlertTriangle,
-  ArrowUpDown, // Ditambahkan untuk ikon modal
+  ArrowUpDown,
   CheckCircle,
   Download,
   DownloadCloud,
@@ -12,6 +12,7 @@ import {
   ZoomIn,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { SuratEkspedisi } from "@/app/buku-ekspedisi/types";
 
 /* Reusable button */
 const Button = ({
@@ -128,11 +129,10 @@ const AlertToast = ({
 
   return (
     <div
-      className={`border ${selectedColor.bg} ${selectedColor.border} ${selectedColor.text} rounded-md p-4 mb-4 relative flex gap-3 items-start transition-all duration-300 ease-in-out w-full shadow-lg ${
-        isVisible
+      className={`border ${selectedColor.bg} ${selectedColor.border} ${selectedColor.text} rounded-md p-4 mb-4 relative flex gap-3 items-start transition-all duration-300 ease-in-out w-full shadow-lg ${isVisible
           ? "opacity-100 translate-y-0"
           : "opacity-0 -translate-y-4 pointer-events-none"
-      }`}
+        }`}
       role="alert"
     >
       <div className="flex-shrink-0 pt-0.5">{icons[color]}</div>
@@ -196,29 +196,18 @@ const ImagePreviewModal = ({
 
 /* === TABLE CLIENT COMPONENT === */
 
-type Row = {
-  id: string;
-  tglPengiriman: string | null;
-  noSurat: string;
-  tglSurat: string; // ISO
-  isiSingkat: string;
-  ditujukan: string;
-  keterangan: string;
-  signDirectory?: string | null;
-};
-
 export default function TableClient({
   dataEkspedisi,
   itemsPerPage,
   selectedYear,
   searchQuery = "",
-  userRole, // --- [MODIFICATION] Add userRole to props ---
+  userRole,
 }: {
-  dataEkspedisi: Row[];
+  dataEkspedisi: SuratEkspedisi[];
   itemsPerPage: number;
   selectedYear: string;
   searchQuery?: string;
-  userRole: "ADMIN" | "STAF"; // --- [MODIFICATION] Define the prop type ---
+  userRole: "ADMIN" | "STAF";
 }) {
   // helper to format dates
   const fmt = (iso?: string | null) => {
@@ -291,7 +280,6 @@ export default function TableClient({
   const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
 
   const handleOpenConfirmModal = (id: string) => {
-
     setItemToDeleteId(id);
     setIsConfirmModalOpen(true);
   };
@@ -303,8 +291,6 @@ export default function TableClient({
 
   const handleConfirmDelete = async () => {
     if (!itemToDeleteId) return;
-
-    console.log("confirm delete id:", itemToDeleteId);
 
     try {
       const res = await fetch(`/api/surat/${itemToDeleteId}/delete`, {
@@ -371,140 +357,196 @@ export default function TableClient({
         imgUrl={previewImageUrl}
       />
 
-      {/* DATA TABLE */}
-      <table className="w-full text-sm text-left text-gray-700">
-        <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-          <tr>
-            <th className="px-6 py-3">No.</th>
-            <th className="px-6 py-3">Aksi</th>
-            <th className="px-6 py-3">
-              <div className="flex items-center gap-1">
-                Tgl Pengiriman <ArrowUpDown size={14} />
-              </div>
-            </th>
-            <th className="px-6 py-3">
-              <div className="flex items-center gap-1">
-                No. Surat <ArrowUpDown size={14} />
-              </div>
-            </th>
-            <th className="px-6 py-3">
-              <div className="flex items-center gap-1">
-                Tanggal Surat <ArrowUpDown size={14} />
-              </div>
-            </th>
-            <th className="px-6 py-3">
-              <div className="flex items-center gap-1">
-                Isi Singkat <ArrowUpDown size={14} />
-              </div>
-            </th>
-            <th className="px-6 py-3">
-              <div className="flex items-center gap-1">
-                Ditujukan Kepada <ArrowUpDown size={14} />
-              </div>
-            </th>
-            <th className="px-6 py-3">
-              <div className="flex items-center gap-1">
-                Keterangan <ArrowUpDown size={14} />
-              </div>
-            </th>
-            {/* New column header: Tanda Tangan */}
-            <th className="px-6 py-3">
-              <div className="flex items-center gap-1">Tanda Tangan</div>
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {paginatedData.map((item, idx) => (
-            <tr
-              key={item.id}
-              className="bg-white border-b hover:bg-gray-50"
-            >
-              {/* Row number */}
-              <td className="px-6 py-4 font-medium">
-                {startIndex + idx + 1}
-              </td>
-
-              {/* Aksi */}
-              <td className="px-6 py-4">
-                <div className="flex gap-2">
-                  {/* Edit */}
-                  <a
-                    href={`/buku-ekspedisi/${item.id}`}
-                    title="Ubah Data"
-                    className="p-2 bg-yellow-400 text-white rounded-md shadow hover:bg-yellow-500 transition-colors"
-                  >
-                    <Pencil size={16} />
-                  </a>
-
-                  {/* --- [MODIFICATION] Conditional Delete Button --- */}
-                  {userRole === "ADMIN" && (
+      {/* --- DESKTOP TABLE VIEW (Hidden on Mobile) --- */}
+      <div className="hidden md:block">
+        <table className="w-full text-sm text-left text-gray-700">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+            <tr>
+              <th className="px-6 py-3">No.</th>
+              <th className="px-6 py-3">Aksi</th>
+              <th className="px-6 py-3">
+                <div className="flex items-center gap-1">
+                  Tgl Pengiriman <ArrowUpDown size={14} />
+                </div>
+              </th>
+              <th className="px-6 py-3">
+                <div className="flex items-center gap-1">
+                  No. Surat <ArrowUpDown size={14} />
+                </div>
+              </th>
+              <th className="px-6 py-3">
+                <div className="flex items-center gap-1">
+                  Tanggal Surat <ArrowUpDown size={14} />
+                </div>
+              </th>
+              <th className="px-6 py-3">
+                <div className="flex items-center gap-1">
+                  Isi Singkat <ArrowUpDown size={14} />
+                </div>
+              </th>
+              <th className="px-6 py-3">
+                <div className="flex items-center gap-1">
+                  Ditujukan Kepada <ArrowUpDown size={14} />
+                </div>
+              </th>
+              <th className="px-6 py-3">
+                <div className="flex items-center gap-1">
+                  Keterangan <ArrowUpDown size={14} />
+                </div>
+              </th>
+              <th className="px-6 py-3">
+                <div className="flex items-center gap-1">Tanda Tangan</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedData.map((item, idx) => (
+              <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
+                <td className="px-6 py-4 font-medium">{startIndex + idx + 1}</td>
+                <td className="px-6 py-4">
+                  <div className="flex gap-2">
+                    <a
+                      href={`/buku-ekspedisi/${item.id}`}
+                      className="p-2 bg-yellow-400 text-white rounded-md shadow hover:bg-yellow-500 transition-colors"
+                    >
+                      <Pencil size={16} />
+                    </a>
+                    {userRole === "ADMIN" && (
+                      <button
+                        onClick={() => handleOpenConfirmModal(item.id)}
+                        className="p-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => window.open(`/api/surat/${item.id}/download`, "_blank")}
+                      className="p-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
+                    >
+                      <DownloadCloud size={16} />
+                    </button>
+                    <button
+                      onClick={() => window.open(`/api/surat/${item.id}/download-surat`, "_blank")}
+                      className="p-2 bg-teal-500 text-white rounded-md shadow hover:bg-teal-600 transition-colors"
+                    >
+                      <Download size={16} />
+                    </button>
+                  </div>
+                </td>
+                <td className="px-6 py-4">{fmt(item.tglPengiriman)}</td>
+                <td className="px-6 py-4">{item.noSurat}</td>
+                <td className="px-6 py-4">{fmt(item.tglSurat)}</td>
+                <td className="px-6 py-4">{item.isiSingkat}</td>
+                <td className="px-6 py-4">{item.ditujukan}</td>
+                <td className="px-6 py-4">{item.keterangan}</td>
+                <td className="px-6 py-4">
+                  {item.signDirectory ? (
                     <button
                       type="button"
-                      title="Hapus Data"
-                      onClick={() => handleOpenConfirmModal(item.id)}
-                      className="p-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition-colors"
+                      className="relative group"
+                      onClick={() => openImagePreview(item.signDirectory!)}
                     >
-                      <Trash2 size={16} />
+                      <img
+                        src={item.signDirectory}
+                        alt="Tanda tangan"
+                        className="h-12 w-12 object-cover rounded ring-1 ring-gray-300 group-hover:ring-blue-500 transition"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 text-white flex items-center justify-center text-[10px] font-medium rounded transition">
+                        <ZoomIn size={16} />
+                      </div>
                     </button>
+                  ) : (
+                    <span className="text-gray-400 italic">-</span>
                   )}
-                  {/* --- End of Modification --- */}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-                  {/* Extras (your placeholders) */}
+      {/* --- MOBILE CARD VIEW (Visible on Mobile) --- */}
+      <div className="md:hidden flex flex-col gap-4">
+        {paginatedData.map((item, idx) => (
+          <div key={item.id} className="bg-white p-4 rounded-lg shadow border border-gray-200">
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                  #{startIndex + idx + 1}
+                </span>
+                <h3 className="font-bold text-gray-800 mt-1">{item.noSurat}</h3>
+                <p className="text-xs text-gray-500">{fmt(item.tglSurat)}</p>
+              </div>
+              <div className="flex gap-1">
+                <a
+                  href={`/buku-ekspedisi/${item.id}`}
+                  className="p-1.5 bg-yellow-400 text-white rounded shadow"
+                >
+                  <Pencil size={14} />
+                </a>
+                {userRole === "ADMIN" && (
                   <button
-                    type="button"
-                    title="Download"
-                    onClick={() => window.open(`/api/surat/${item.id}/download`, "_blank")}
-                    className="p-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
+                    onClick={() => handleOpenConfirmModal(item.id)}
+                    className="p-1.5 bg-red-600 text-white rounded shadow"
                   >
-                    <DownloadCloud size={16} />
+                    <Trash2 size={14} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => window.open(`/api/surat/${item.id}/download-surat`, "_blank")}
-                    title="Aksi Lain"
-                    className="p-2 bg-teal-500 text-white rounded-md shadow hover:bg-teal-600 transition-colors"
-                  >
-                    <Download size={16} />
-                  </button>
-                </div>
-              </td>
-
-              {/* Fields */}
-              <td className="px-6 py-4">{fmt(item.tglPengiriman)}</td>
-              <td className="px-6 py-4">{item.noSurat}</td>
-              <td className="px-6 py-4">{fmt(item.tglSurat)}</td>
-              <td className="px-6 py-4">{item.isiSingkat}</td>
-              <td className="px-6 py-4">{item.ditujukan}</td>
-              <td className="px-6 py-4">{item.keterangan}</td>
-
-              {/* Tanda Tangan cell */}
-              <td className="px-6 py-4">
-                {item.signDirectory ? (
-                  <button
-                    type="button"
-                    className="relative group"
-                    onClick={() => openImagePreview(item.signDirectory!)}
-                    title="Klik untuk perbesar"
-                  >
-                    <img
-                      src={item.signDirectory}
-                      alt="Tanda tangan / bukti"
-                      className="h-12 w-12 object-cover rounded ring-1 ring-gray-300 group-hover:ring-blue-500 transition"
-                    />
-                    {/* hover overlay icon */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 text-white flex items-center justify-center text-[10px] font-medium rounded transition">
-                      <ZoomIn size={16} />
-                    </div>
-                  </button>
-                ) : (
-                  <span className="text-gray-400 italic">-</span>
                 )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm text-gray-700">
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold text-gray-500">Tujuan:</span>
+                <span className="col-span-2">{item.ditujukan}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold text-gray-500">Perihal:</span>
+                <span className="col-span-2">{item.isiSingkat}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold text-gray-500">Kirim:</span>
+                <span className="col-span-2">{fmt(item.tglPengiriman)}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold text-gray-500">Ket:</span>
+                <span className="col-span-2">{item.keterangan || "-"}</span>
+              </div>
+            </div>
+
+            <div className="mt-4 flex justify-between items-center border-t pt-3">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.open(`/api/surat/${item.id}/download`, "_blank")}
+                  className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs rounded shadow"
+                >
+                  <DownloadCloud size={12} /> Unduh
+                </button>
+                <button
+                  onClick={() => window.open(`/api/surat/${item.id}/download-surat`, "_blank")}
+                  className="flex items-center gap-1 px-2 py-1 bg-teal-500 text-white text-xs rounded shadow"
+                >
+                  <Download size={12} /> Surat
+                </button>
+              </div>
+
+              {item.signDirectory && (
+                <button
+                  type="button"
+                  onClick={() => openImagePreview(item.signDirectory!)}
+                  className="relative h-10 w-10"
+                >
+                  <img
+                    src={item.signDirectory}
+                    alt="TTD"
+                    className="h-full w-full object-cover rounded border"
+                  />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* FOOTER / PAGINATION */}
       <div className="p-4 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">

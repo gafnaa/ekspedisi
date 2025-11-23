@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob"; // <-- upload to Vercel Blob
+import { put } from "@vercel/blob";
+import path from "path";
+import { writeFile, mkdir } from "fs/promises";
 
-// ... (Fungsi GET tetap sama) ...
 export async function GET() {
   try {
     const rows = await prisma.suratKeluar.findMany({
@@ -48,21 +49,19 @@ export async function POST(req: NextRequest) {
     const tujuan = form.get("tujuan") as string | null;
     const keterangan =
       (form.get("keterangan") as string | null) &&
-      (form.get("keterangan") as string) !== ""
+        (form.get("keterangan") as string) !== ""
         ? (form.get("keterangan") as string)
         : null;
-
-    // --- PERUBAHAN: Dapatkan userId dari form ---
     const userId = form.get("userId") as string | null;
 
-    // Basic validation (same spirit as before)
+    // Basic validation
     if (
       !nomorSurat ||
       !tanggalSuratRaw ||
       !tanggalPengirimanRaw ||
       !tujuan ||
       !perihal ||
-      !userId // <-- Tambahkan validasi userId
+      !userId
     ) {
       return NextResponse.json(
         {
@@ -78,15 +77,52 @@ export async function POST(req: NextRequest) {
     const tanggalKirim = new Date(tanggalPengirimanRaw);
 
     const berkasFile = form.get("berkas") as File | null;
-
     let signDirectory: string | null = null;
 
     if (berkasFile && berkasFile.size > 0) {
-      const blob = await put(berkasFile.name, berkasFile, {
-        access: "public",
-        addRandomSuffix: true,
-      });
-      signDirectory = blob.url;
+      let uploadSuccess = false;
+
+      // 1. Try Vercel Blob if token exists
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        console.log("Using Vercel Blob for upload...");
+        try {
+          const blob = await put(berkasFile.name, berkasFile, {
+            access: "public",
+            addRandomSuffix: true,
+          });
+          signDirectory = blob.url;
+          uploadSuccess = true;
+          console.log("Vercel Blob upload success:", blob.url);
+        } catch (blobError) {
+          console.error("Vercel Blob upload failed (will try local fallback):", blobError);
+          // Do not throw, let it fall through to local storage
+        }
+      }
+
+      // 2. Fallback to Local Storage if Vercel Blob failed or token missing
+      if (!uploadSuccess) {
+        console.log("Using local storage fallback...");
+
+        const bytes = await berkasFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        const timestamp = Date.now();
+        const safeName = berkasFile.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+        const filename = `${timestamp}-${safeName}`;
+
+        const uploadDir = path.join(process.cwd(), "public", "signatures");
+        try {
+          await mkdir(uploadDir, { recursive: true });
+        } catch (e) {
+          // Ignore if exists
+        }
+
+        const filepath = path.join(uploadDir, filename);
+        await writeFile(filepath, buffer);
+
+        signDirectory = `/signatures/${filename}`;
+        console.log("Local storage upload success:", signDirectory);
+      }
     }
 
     // Create the DB record, now including signDirectory
@@ -98,7 +134,7 @@ export async function POST(req: NextRequest) {
         perihal,
         tujuan,
         keterangan,
-        userId: userId, // <-- Gunakan userId dari form, hapus fallback
+        userId: userId,
         signDirectory,
       },
     });
@@ -139,7 +175,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Terjadi kesalahan saat menyimpan data. Silakan coba lagi.",
+        error: `Terjadi kesalahan: ${error.message || String(error)}`,
       },
       { status: 500 }
     );
