@@ -5,6 +5,21 @@ WORKDIR /app
 
 # 1. Install dependencies sistem yang diperlukan untuk Alpine
 # libc6-compat wajib untuk Next.js/Prisma
+# python3, make, g++ diperlukan jika bcrypt perlu dicompile ulang
+RUN apk add --no-cache libc6-compat python3 make g++
+
+# 2. Copy file dependency
+COPY package*.json ./
+
+# 3. Gunakan npm ci (clean install) yang lebih cepat dan deterministik daripada npm install
+# Gunakan --ignore-scripts agar postinstall (npm run build) TIDAK jalan dulu
+RUN npm ci --ignore-scripts
+
+# 4. Copy seluruh kode aplikasi
+COPY . .
+
+# 5. Generate Prisma Client (PENTING: Harus sebelum build)
+RUN npx prisma generate
 
 # 6. Build aplikasi Next.js
 RUN npm run build
