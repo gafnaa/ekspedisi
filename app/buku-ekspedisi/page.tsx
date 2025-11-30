@@ -122,6 +122,15 @@ export default function BukuEkspedisiPage() {
             Unduh
           </button>
         </Link>
+
+        {userRole === "ADMIN" && (
+          <Link href="/management-account">
+            <button className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition-colors w-full md:w-auto">
+              <Plus size={18} />
+              Management Account
+            </button>
+          </Link>
+        )}
       </div>
 
       {/* Card untuk filter dan tabel */}

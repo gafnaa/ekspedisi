@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState(""); // Ganti email menjadi username
@@ -93,7 +94,14 @@ export default function LoginPage() {
             {isLoading ? "Loading..." : "Login"}
           </button>
         </form>
+        <p className="text-sm text-center text-blue-600">
+         {" "}
+          <Link href="/reset-password" className="w-full block">
+            Reset Password
+          </Link>
+        </p>
       </div>
     </div>
   );
 }
+
