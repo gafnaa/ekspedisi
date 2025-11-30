@@ -4,6 +4,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: ekspedisi_db
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
@@ -18,6 +19,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: ekspedisi_app
+    restart: always
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
