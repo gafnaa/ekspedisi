@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const ekspedisiList = await prisma.suratKeluar.findMany({
+      where: { deletedAt: null },
       orderBy: { createdAt: "asc" },
     });
 
