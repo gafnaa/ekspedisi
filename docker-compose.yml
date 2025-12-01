@@ -25,6 +25,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-admin}@db:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-buku_ekspedisi}
       NODE_ENV: development
+      BLOB_READ_WRITE_TOKEN: ${BLOB_READ_WRITE_TOKEN}
     depends_on:
       - db
 
