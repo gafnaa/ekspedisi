@@ -32,6 +32,12 @@ else
     echo "Docker Compose is already installed."
 fi
 
+# Install Docker Buildx (Required for Amazon Linux 2023)
+echo "Installing Docker Buildx..."
+mkdir -p ~/.docker/cli-plugins/
+curl -SL https://github.com/docker/buildx/releases/download/v0.19.0/buildx-v0.19.0.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
+chmod +x ~/.docker/cli-plugins/docker-buildx
+
 # Print versions
 echo "Git Version: $(git --version)"
 echo "Docker Version: $(docker --version)"
