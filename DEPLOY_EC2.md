@@ -83,6 +83,9 @@ By default, Next.js runs on port 3000. We need to open this port.
     NODE_ENV=production
     NEXTAUTH_SECRET=changethistoasupersecretrandomstring
     NEXTAUTH_URL=http://<YOUR_EC2_PUBLIC_IP>:3000
+
+    # Vercel Blob (For Image Uploads)
+    BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
     ```
 3.  Press `Ctrl+O`, `Enter` to save, and `Ctrl+X` to exit.
 
